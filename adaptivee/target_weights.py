@@ -30,7 +30,7 @@ class SoftMaxWeighter(MixInTargetWeighter):
         super().__init__()
         self.C = regularization_term
 
-    def get_target_weights(
+    def _get_target_weights(
         self, models_preds: np.ndarray, true_y: np.ndarray
     ) -> np.ndarray:
 

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 import numpy as np
+
 from torch import Tensor
 
 
@@ -20,7 +21,7 @@ class MixInReweight(ABC):
         final_weights = self._get_final_weights(
             encoder_weights, initial_weights, regularization_term
         )
-        return final_weights.numpy()
+        return final_weights
 
     @abstractmethod
     def _get_final_weights(

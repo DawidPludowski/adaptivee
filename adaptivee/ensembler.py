@@ -15,7 +15,7 @@ class AdaptiveEnsembler:
         reweighter: MixInReweight = SimpleReweight(),
         is_models_trained: bool = True,
         predict_fn: str = "predict",
-        train_fn: str = "train",
+        train_fn: str = "fit",
     ) -> None:
         self.models = models
         self.encoder = encoder
@@ -44,11 +44,17 @@ class AdaptiveEnsembler:
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         y_preds = self._get_models_preds(X)
+
+        final_weights = self.get_weights(X)
+
+        y_pred_final = np.mean(y_preds * final_weights, axis=1)
+        return y_pred_final
+
+    def get_weights(self, X: np.ndarray) -> np.ndarray:
         weights = self.encoder.predict(X)
         reweights = self.reweighter.get_final_weights(weights)
 
-        y_pred_final = np.mean(y_preds * reweights, axis=1)
-        return y_pred_final
+        return reweights
 
     def _train_models(self, X: np.ndarray, y: np.ndarray) -> None:
 
@@ -75,7 +81,7 @@ class AdaptiveEnsembler:
         y_preds = []
         for model in self.models:
             y_pred = model.predict(X)
-            y_preds.append(y_pred)
+            y_preds.append(y_pred.reshape(-1, 1))
 
         y_preds = np.hstack(y_preds)
 
