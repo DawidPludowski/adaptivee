@@ -25,6 +25,14 @@ class MixInEncoder(ABC):
         dataloder = self._loader_from_data(X, y)
         self._train(dataloder, n_iter=n_iter)
 
+    def predict(
+        self,
+        X: Tensor | np.ndarray | pd.DataFrame,
+    ) -> np.ndarray:
+        X = self._convert_dtype(X)
+        y_preds = self.encoder(X)
+        return y_preds.numpy()
+
     def _convert_dtype(
         self, data: Tensor | np.ndarray | pd.DataFrame
     ) -> Tensor:
