@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -117,7 +118,7 @@ class NLPEncoder(MixInDeepEncoder):
 
         self._encoder = nn.Sequential(*layers)
 
-    def _train(self, dataloader: DataLoader, n_iter: int = 100) -> None:
+    def _train(self, dataloader: DataLoader, n_iter: int = 10_000) -> None:
 
         running_loss = 0.0
         last_loss = 0.0
@@ -125,7 +126,7 @@ class NLPEncoder(MixInDeepEncoder):
         tb_writer = self._get_tb_writer("NLP")
 
         loss_fn = nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(self.encoder.parameters(), lr=0.001)
+        optimizer = torch.optim.Adam(self.encoder.parameters(), lr=0.0001)
 
         for epoch_index in range(n_iter):
 
@@ -134,14 +135,13 @@ class NLPEncoder(MixInDeepEncoder):
                 optimizer.zero_grad()
                 outputs = self.encoder(inputs)
 
-                loss = loss_fn(outputs, labels)
+                loss = loss_fn(outputs.reshape(-1), labels.reshape(-1))
                 loss.backward()
                 optimizer.step()
 
                 running_loss += loss.item()
-                if i % 1000 == 999:
-                    last_loss = running_loss / 1000  # loss per batch
-                    print("  batch {} loss: {}".format(i + 1, last_loss))
+                if i % 10 == 9:
+                    last_loss = running_loss / 1000
                     tb_x = epoch_index * len(dataloader) + i + 1
                     tb_writer.add_scalar("Loss/train", last_loss, tb_x)
                     running_loss = 0.0
@@ -149,9 +149,12 @@ class NLPEncoder(MixInDeepEncoder):
 
 class DummyEncoder(MixInEncoder):
 
-    def __init__(self, output_size: int) -> None:
+    def __init__(
+        self, output_size: int, weights: Optional[np.ndarray] = None
+    ) -> None:
         super().__init__()
         self.output_size = output_size
+        self.weights = weights
 
     def train(
         self,
@@ -161,4 +164,11 @@ class DummyEncoder(MixInEncoder):
         pass
 
     def predict(self, X: Tensor | np.ndarray | pd.DataFrame) -> np.ndarray:
-        return np.ones(shape=(X.shape[0], self.output_size)) / self.output_size
+        if self.weights is None:
+            return (
+                np.ones(shape=(X.shape[0], self.output_size))
+                / self.output_size
+            )
+        else:
+            weights = self.weights.reshape((1, -1))
+            return np.repeat(weights, axis=0, repeats=X.shape[0])
