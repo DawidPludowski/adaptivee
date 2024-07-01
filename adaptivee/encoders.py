@@ -14,6 +14,31 @@ class MixInEncoder(ABC):
     def __init__(self) -> None:
         pass
 
+    @abstractmethod
+    def train(
+        self,
+        X: Tensor | np.ndarray | pd.DataFrame,
+        y: Tensor | np.ndarray | pd.DataFrame,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def predict(
+        self,
+        X: Tensor | np.ndarray | pd.DataFrame,
+    ) -> np.ndarray:
+        pass
+
+    @property
+    def encoder(self):
+        return self._encoder
+
+
+class MixInDeepEncoder(MixInEncoder):
+
+    def __init__(self) -> None:
+        pass
+
     def train(
         self,
         X: Tensor | np.ndarray | pd.DataFrame,
@@ -77,7 +102,7 @@ class MixInEncoder(ABC):
         return self._encoder
 
 
-class NLPEncoder(MixInEncoder):
+class NLPEncoder(MixInDeepEncoder):
 
     def __init__(self, shape: list[int]) -> None:
         super().__init__()
@@ -132,11 +157,7 @@ class DummyEncoder(MixInEncoder):
         self,
         X: Tensor | np.ndarray | pd.DataFrame,
         y: Tensor | np.ndarray | pd.DataFrame,
-        n_iter: int = 100,
     ) -> None:
-        pass
-
-    def _train(self, dataloader: DataLoader, n_iter: int) -> None:
         pass
 
     def predict(self, X: Tensor | np.ndarray | pd.DataFrame) -> np.ndarray:

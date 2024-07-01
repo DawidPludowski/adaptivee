@@ -1,0 +1,7 @@
+repos:
+  - repo: local
+    hooks:
+      - id: update-requirements
+        name: update-requirements
+        entry: ./scripts/update_requirements.sh
+        language: script
