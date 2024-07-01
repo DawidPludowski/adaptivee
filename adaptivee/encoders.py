@@ -1,12 +1,15 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
 import torch
 from torch import Tensor, nn
+from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.tensorboard import SummaryWriter
 
 
-class Encoder(ABC):
+class MixInEncoder(ABC):
 
     def __init__(self) -> None:
         pass
@@ -15,9 +18,12 @@ class Encoder(ABC):
         self,
         X: Tensor | np.ndarray | pd.DataFrame,
         y: Tensor | np.ndarray | pd.DataFrame,
+        n_iter: int = 100,
     ) -> None:
 
         X, y = self._convert_dtype(X), self._convert_dtype(y)
+        dataloder = self._loader_from_data(X, y)
+        self._train(dataloder, n_iter=n_iter)
 
     def _convert_dtype(
         self, data: Tensor | np.ndarray | pd.DataFrame
@@ -34,8 +40,21 @@ class Encoder(ABC):
                 f"Expected type from Tensor | np.ndarray | pd.DataFrame. Got {type(data)} instead."
             )
 
+    def _loader_from_data(
+        self, X: Tensor, y: Tensor, batch_size: int = 64
+    ) -> DataLoader:
+        dataset = TensorDataset(X, y)
+        dataloader = DataLoader(dataset, batch_size=batch_size)
+        return dataloader
+
+    def _get_tb_writer(self, name: str) -> SummaryWriter:
+        tb_writer = SummaryWriter(
+            f"{name}-{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        )
+        return tb_writer
+
     @abstractmethod
-    def _train(self, X: Tensor, y: Tensor):
+    def _train(self, dataloader: DataLoader, n_iter: int) -> None:
         pass
 
     @property
@@ -43,7 +62,7 @@ class Encoder(ABC):
         return self._encoder
 
 
-class NLPEncoder(Encoder):
+class NLPEncoder(MixInEncoder):
 
     def __init__(self, shape: list[int]) -> None:
         super().__init__()
@@ -55,5 +74,30 @@ class NLPEncoder(Encoder):
 
         self._encoder = nn.Sequential(*layers)
 
-    def _train(self, X: Tensor, y: Tensor):
-        pass
+    def _train(self, dataloader: DataLoader, n_iter: int = 100) -> None:
+
+        running_loss = 0.0
+        last_loss = 0.0
+
+        tb_writer = self._get_tb_writer("NLP")
+
+        loss_fn = nn.CrossEntropyLoss()
+        optimizer = torch.optim.Adam(self.encoder.parameters(), lr=0.001)
+
+        for epoch_index in range(n_iter):
+
+            for i, data in enumerate(dataloader):
+                inputs, labels = data
+                optimizer.zero_grad()
+                outputs = self.encoder(inputs)
+                loss = loss_fn(outputs, labels)
+                loss.backward()
+                optimizer.step()
+
+                running_loss += loss.item()
+                if i % 1000 == 999:
+                    last_loss = running_loss / 1000  # loss per batch
+                    print("  batch {} loss: {}".format(i + 1, last_loss))
+                    tb_x = epoch_index * len(dataloader) + i + 1
+                    tb_writer.add_scalar("Loss/train", last_loss, tb_x)
+                    running_loss = 0.0
