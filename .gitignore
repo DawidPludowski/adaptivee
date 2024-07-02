@@ -166,3 +166,6 @@ notebooks/*
 
 # torch logs
 tensorboard/*
+
+# analysis reports
+report/*
