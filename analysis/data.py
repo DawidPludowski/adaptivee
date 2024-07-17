@@ -21,7 +21,7 @@ def create_linear(
     X = _sample_data(n, p, distribution)
     y_prob = _sigmoid(X @ betas)
 
-    y = (0.5 < y_prob).astype(int)
+    y = (0.5 < y_prob).astype(int).reshape(-1)
     X = _scale(X)
 
     return X, y
@@ -46,14 +46,12 @@ def create_cubes(
     lower_boundaries_ = np.arange(X_min, X_max, cube_size)
 
     lower_boundaries = set(combinations_with_replacement(lower_boundaries_, p))
-    print(len(lower_boundaries))
     all_boundaries = []
 
     for boundary in lower_boundaries:
         all_boundaries += permutations(boundary)
 
     all_boundaries = set(all_boundaries)
-    print(len(all_boundaries))
 
     for i in range(p):
         all_boundaries = sorted(all_boundaries, key=lambda x: x[i])

@@ -23,7 +23,8 @@ def main() -> None:
 
         logger.info(f"Start experiment #{idx:02}")
 
-        X, y = combination[0][0], combination[0][1]
+        data_name = combination[0][0]
+        X, y = combination[0][1][0], combination[0][1][1]
         encoder = combination[1]
         reweighter = combination[2]
         target_weighter = combination[3]
@@ -36,7 +37,8 @@ def main() -> None:
             target_weighter,
             encoder,
             reweighter,
-            report_name=f"{timestamp}/experiment_{idx:02}",
+            report_name=f"{timestamp}/{data_name}/experiment_{idx:02}",
+            data_name=data_name,
         )
 
         report.make_report()

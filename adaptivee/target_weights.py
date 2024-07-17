@@ -63,18 +63,19 @@ class StaticGridWeighter(MixInTargetWeighter):
         self, models_preds: np.ndarray, true_y: np.ndarray
     ) -> np.ndarray:
 
-        if self.weights is not None:
-            return self.weights
-        else:
+        if self.weights is None:
             self.weights = self._find_best_weights(models_preds, true_y)
-            return self.weights
+
+        return self.weights.reshape(1, -1).repeat(
+            repeats=true_y.shape[0], axis=0
+        )
 
     def _find_best_weights(
         self, models_preds: np.ndarray, true_y: np.ndarray
     ) -> np.ndarray:
         n_models = models_preds.shape[1]
 
-        step_size = 1 / (self.grid_points - 1)
+        step_size = 1 / self.grid_points
         grid_1d = np.arange(0, 1 + step_size, step_size)
 
         grid_points = combinations(grid_1d, n_models)
@@ -82,6 +83,9 @@ class StaticGridWeighter(MixInTargetWeighter):
         max_score = 0
         best_weights = None
         for grid_point in grid_points:
+
+            if abs(sum(grid_point) - 1) > 1e-2:
+                continue
 
             score = self._evaluate_weighting(grid_point, models_preds, true_y)
             if score > max_score:
