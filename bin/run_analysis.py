@@ -3,7 +3,7 @@ from itertools import product
 
 from loguru import logger
 
-from analysis.auto_report import AutoReport
+from analysis.auto_report import AutoReport, AutoSummaryReport
 from analysis.configs import (
     DATASETS,
     ENCODERS,
@@ -42,6 +42,9 @@ def main() -> None:
         )
 
         report.make_report()
+
+    auto_summary_report = AutoSummaryReport(f"report/{timestamp}")
+    auto_summary_report.make_report()
 
 
 if __name__ == "__main__":

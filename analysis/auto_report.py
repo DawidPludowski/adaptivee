@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime
 from pathlib import Path
 
@@ -221,3 +222,69 @@ class AutoReport:
 
         plt.savefig(f"{self.root_dir}/weights_diff.png")
         plt.clf()
+
+
+class AutoSummaryReport:
+
+    def __init__(self, root_dir: str | Path) -> None:
+        self.root_dir = Path(root_dir)
+
+    def make_report(self) -> None:
+        self.compare_metrics()
+        self.compare_weights()
+
+    def compare_metrics(self) -> None:
+
+        metrics = self.__get_metrics()
+        self.__make_rank_test(metrics)
+        self.__summarize_metrics(metrics)
+
+    def compare_weights(self) -> None:
+        warnings.warn("Compare weights not implemented")
+        weights = self.__get_weights()
+        self.__compare_weights_diversity(weights)
+        self.__compare_weights_predictions(weights)
+
+    def __get_metrics(self) -> pd.DataFrame:
+        metrics = pd.DataFrame()
+
+        metrics_files = self.root_dir.rglob("metrics.csv")
+        for metric_file in metrics_files:
+            data_name = metric_file.parent.parent.stem
+            experiment_name = metric_file.parent.stem
+
+            metric_summary = pd.read_csv(metric_file)
+            metric_summary["data_name"] = data_name
+            metric_summary["experiment_name"] = experiment_name
+
+            metrics = pd.concat([metrics, metric_summary])
+
+        return metrics
+
+    def __make_rank_test(self, metrics: pd.DataFrame) -> None:
+        warnings.warn("Rank test not implemented")
+
+    def __summarize_metrics(self, metrics: pd.DataFrame) -> None:
+
+        for metric_name in metrics["metric"].unique():
+            g = sns.boxplot(
+                data=metrics[metrics["metric"] == metric_name],
+                x="experiment_name",
+                y="score",
+                hue="data",
+            )
+            g.set(ylabel=f"{metric_name}", title=f"{metric_name} score")
+            g.set_ylim(-0.1, 1.1)
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            plt.savefig(f"{self.root_dir}/score_{metric_name}")
+            plt.clf()
+
+    def __get_weights(self) -> pd.DataFrame:
+        pass
+
+    def __compare_weights_diversity(self, weights: pd.DataFrame) -> None:
+        pass
+
+    def __compare_weights_predictions(self, weights: pd.DataFrame) -> None:
+        pass
