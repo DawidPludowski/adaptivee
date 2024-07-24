@@ -14,17 +14,29 @@ from adaptivee.target_weights import (
     StaticGridWeighter,
 )
 from analysis.data import (
+    change_position,
     create_circles,
     create_cubes,
     create_linear,
     create_normal_distribution,
+    mix_data,
 )
 
 DATASETS: list[tuple[str, tuple[np.ndarray, np.ndarray]]] = [
-    ("cricles-simple", create_circles()),
-    ("linear-simple", create_linear()),
-    ("cubes-simple", create_cubes(n_cubes=5)),
-    ("normal-dist-simple", create_normal_distribution()),
+    (
+        "circles-linear-mix",
+        mix_data(
+            change_position(create_circles(), [2, 2]),
+            change_position(create_linear(), [-2, -2]),
+        ),
+    ),
+    (
+        "cubes-normal-mix",
+        mix_data(
+            change_position(create_cubes(), [2, 2]),
+            change_position(create_normal_distribution(), [-2, -2]),
+        ),
+    ),
 ]
 
 MODELS: list[tuple[any]] = [
@@ -36,7 +48,7 @@ MODELS: list[tuple[any]] = [
     )
 ]
 
-ENCODERS: list[MixInEncoder] = [partial(NLPEncoder, [100]), DummyEncoder]
+ENCODERS: list[MixInEncoder] = [partial(NLPEncoder, [100, 100]), DummyEncoder]
 REWEIGHTERS: list[MixInReweight] = [SimpleReweight]
 TARGET_WEIGHTERS: list[MixInTargetWeighter] = [
     SoftMaxWeighter,

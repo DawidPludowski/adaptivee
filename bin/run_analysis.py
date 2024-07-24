@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import partial
 from itertools import product
 
 from loguru import logger
@@ -11,6 +12,17 @@ from analysis.configs import (
     REWEIGHTERS,
     TARGET_WEIGHTERS,
 )
+
+
+def __get_class_name(obj: any) -> str:
+    if isinstance(obj, partial):
+        cls_name = obj.__getattribute__("func").__name__
+    elif isinstance(obj, type):
+        cls_name = obj.__name__
+    else:
+        cls_name = type(obj).__name__
+
+    return cls_name
 
 
 def main() -> None:
@@ -37,7 +49,8 @@ def main() -> None:
             target_weighter,
             encoder,
             reweighter,
-            report_name=f"{timestamp}/{data_name}/experiment_{idx:02}",
+            report_name=f"{timestamp}/{data_name}/{__get_class_name(encoder)}"
+            f"_{__get_class_name(reweighter)}_{__get_class_name(target_weighter)}",
             data_name=data_name,
         )
 
