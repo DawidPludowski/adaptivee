@@ -2,7 +2,11 @@ import numpy as np
 
 from adaptivee.encoders import MixInEncoder
 from adaptivee.reweighting import MixInReweight, SimpleReweight
-from adaptivee.target_weights import MixInTargetWeighter, SoftMaxWeighter
+from adaptivee.target_weights import (
+    MixInTargetWeighter,
+    SoftMaxWeighter,
+    StaticGridWeighter,
+)
 
 
 class AdaptiveEnsembler:
@@ -36,6 +40,7 @@ class AdaptiveEnsembler:
 
         y_pred = self._get_models_preds(X)
         weights = self.target_weighter.get_target_weights(y_pred, y)
+        print(weights)
 
         self.encoder.train(X, weights)
 

@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 import numpy as np
-
 from torch import Tensor
 
 
@@ -45,3 +44,22 @@ class SimpleReweight(MixInReweight):
         regularization_term: Optional[float] = None,
     ) -> Tensor:
         return encoder_weights
+
+
+class DirectionReweight(MixInReweight):
+
+    def __init__(self, step_size: float = 0.01) -> None:
+        super().__init__()
+        self.step_size = step_size
+
+    def _get_final_weights(
+        self,
+        encoder_weights: Tensor,
+        initial_weights: Tensor | None = None,
+        regularization_term: float | None = None,
+    ) -> Tensor:
+        weights = (
+            initial_weights
+            + (encoder_weights - initial_weights) * self.step_size
+        )
+        return weights
