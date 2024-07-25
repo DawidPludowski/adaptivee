@@ -15,6 +15,7 @@ from adaptivee.reweighting import (
 from adaptivee.target_weights import (
     MixInTargetWeighter,
     SoftMaxWeighter,
+    StaticEqualWeighter,
     StaticGridWeighter,
     StaticLogisticWeighter,
 )
@@ -59,4 +60,5 @@ TARGET_WEIGHTERS: list[MixInTargetWeighter] = [
     SoftMaxWeighter,
     StaticGridWeighter,
     StaticLogisticWeighter,
+    StaticEqualWeighter,
 ]
