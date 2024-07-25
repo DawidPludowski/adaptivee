@@ -2,7 +2,12 @@ import numpy as np
 
 from adaptivee.encoders import MixInEncoder
 from adaptivee.reweighting import MixInReweight, SimpleReweight
-from adaptivee.target_weights import MixInTargetWeighter, SoftMaxWeighter
+from adaptivee.target_weights import (
+    MixInStaticTargetWeighter,
+    MixInTargetWeighter,
+    SoftMaxWeighter,
+    StaticLogisticWeighter,
+)
 
 
 class AdaptiveEnsembler:
@@ -13,6 +18,7 @@ class AdaptiveEnsembler:
         encoder: MixInEncoder,
         target_weighter: MixInTargetWeighter = SoftMaxWeighter(),
         reweighter: MixInReweight = SimpleReweight(),
+        static_weighter: MixInStaticTargetWeighter = StaticLogisticWeighter(),
         is_models_trained: bool = True,
         predict_fn: str = "predict",
         train_fn: str = "fit",
@@ -21,11 +27,14 @@ class AdaptiveEnsembler:
         self.encoder = encoder
         self.target_weighter = target_weighter
         self.reweighter = reweighter
+        self.static_weighter = static_weighter
 
         self.predict_fn = predict_fn
         self.train_fn = train_fn
 
         self.is_models_trained = is_models_trained
+
+        self.static_weights = None
 
     def create_adaptive_ensembler(
         self, X: np.ndarray, y: np.ndarray, return_score: bool = False
@@ -36,6 +45,9 @@ class AdaptiveEnsembler:
 
         y_pred = self._get_models_preds(X)
         weights = self.target_weighter.get_target_weights(y_pred, y)
+        static_weights = self.static_weighter._find_best_weights(y_pred, y)
+
+        self.static_weights = static_weights
 
         self.encoder.train(X, weights)
 
@@ -52,7 +64,9 @@ class AdaptiveEnsembler:
 
     def get_weights(self, X: np.ndarray) -> np.ndarray:
         weights = self.encoder.predict(X)
-        reweights = self.reweighter.get_final_weights(weights)
+        reweights = self.reweighter.get_final_weights(
+            weights, self.static_weights
+        )
 
         return reweights
 

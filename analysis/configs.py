@@ -6,12 +6,17 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from adaptivee.encoders import DummyEncoder, MixInEncoder, NLPEncoder
-from adaptivee.reweighting import MixInReweight, SimpleReweight
+from adaptivee.encoders import MixInEncoder, NLPEncoder
+from adaptivee.reweighting import (
+    DirectionReweight,
+    MixInReweight,
+    SimpleReweight,
+)
 from adaptivee.target_weights import (
     MixInTargetWeighter,
     SoftMaxWeighter,
     StaticGridWeighter,
+    StaticLogisticWeighter,
 )
 from analysis.data import (
     change_position,
@@ -26,15 +31,15 @@ DATASETS: list[tuple[str, tuple[np.ndarray, np.ndarray]]] = [
     (
         "circles-linear-mix",
         mix_data(
-            change_position(create_circles(), [2, 2]),
-            change_position(create_linear(), [-2, -2]),
+            change_position(create_circles(n=10_000, p=6), [1] * 6),
+            change_position(create_linear(n=1_000, p=6), [-2] * 6),
         ),
     ),
     (
         "cubes-normal-mix",
         mix_data(
-            change_position(create_cubes(), [2, 2]),
-            change_position(create_normal_distribution(), [-2, -2]),
+            change_position(create_cubes(n=5_000), [1] * 2),
+            change_position(create_normal_distribution(n=5_000), [-1] * 2),
         ),
     ),
 ]
@@ -48,9 +53,10 @@ MODELS: list[tuple[any]] = [
     )
 ]
 
-ENCODERS: list[MixInEncoder] = [partial(NLPEncoder, [100, 100]), DummyEncoder]
-REWEIGHTERS: list[MixInReweight] = [SimpleReweight]
+ENCODERS: list[MixInEncoder] = [partial(NLPEncoder, [100, 100])]
+REWEIGHTERS: list[MixInReweight] = [SimpleReweight, DirectionReweight]
 TARGET_WEIGHTERS: list[MixInTargetWeighter] = [
     SoftMaxWeighter,
     StaticGridWeighter,
+    StaticLogisticWeighter,
 ]

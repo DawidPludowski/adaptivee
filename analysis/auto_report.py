@@ -16,10 +16,7 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split
 
-from adaptivee.encoders import MixInEncoder
-from adaptivee.ensembler import AdaptiveEnsembler
-from adaptivee.reweighting import MixInReweight
-from adaptivee.target_weights import MixInTargetWeighter
+from analysis.ensembler import AdaptiveEnsembler
 
 # from analysis.metrics import accuracy as accuracy_score
 # from analysis.metrics import balanced_accuracy as balanced_accuracy_score

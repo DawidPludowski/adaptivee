@@ -14,11 +14,10 @@ class MixInReweight(ABC):
         self,
         encoder_weights: Tensor,
         initial_weights: Optional[Tensor] = None,
-        regularization_term: Optional[float] = None,
     ) -> np.ndarray:
 
         final_weights = self._get_final_weights(
-            encoder_weights, initial_weights, regularization_term
+            encoder_weights, initial_weights
         )
         return final_weights
 
@@ -27,7 +26,6 @@ class MixInReweight(ABC):
         self,
         encoder_weights: Tensor,
         initial_weights: Optional[Tensor] = None,
-        regularization_term: Optional[float] = None,
     ) -> Tensor:
         pass
 
@@ -41,7 +39,6 @@ class SimpleReweight(MixInReweight):
         self,
         encoder_weights: Tensor,
         initial_weights: Optional[Tensor] = None,
-        regularization_term: Optional[float] = None,
     ) -> Tensor:
         return encoder_weights
 
@@ -56,7 +53,6 @@ class DirectionReweight(MixInReweight):
         self,
         encoder_weights: Tensor,
         initial_weights: Tensor | None = None,
-        regularization_term: float | None = None,
     ) -> Tensor:
         weights = (
             initial_weights

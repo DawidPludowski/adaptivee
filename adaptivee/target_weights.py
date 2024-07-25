@@ -137,8 +137,19 @@ class StaticLogisticWeighter(MixInStaticTargetWeighter):
     ) -> np.ndarray:
 
         linear_model = LogisticRegression()
-        linear_model.fit(models_preds, true_y)
+        linear_model.fit(models_preds, true_y.reshape(-1))
         weights = linear_model.coef_
         weights = weights / weights.sum()
+
+        return weights
+
+
+class StaticEqualWeighter(MixInStaticTargetWeighter):
+
+    def _find_best_weights(
+        self, models_preds: np.ndarray, true_y: np.ndarray
+    ) -> np.ndarray:
+        p = models_preds.shape[1]
+        weights = np.ones(shape=(p)) / p
 
         return weights

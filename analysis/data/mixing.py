@@ -48,13 +48,12 @@ def blur_data(
 
 
 def mix_data(
-    data1: tuple[np.ndarray, np.ndarray],
-    data2: tuple[np.ndarray, np.ndarray],
+    *args,
     shuffle: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
 
-    X = np.concatenate([data1[0], data2[0]])
-    y = np.concatenate([data1[1], data2[1]])
+    X = np.concatenate(list(map(lambda data: data[0], args)))
+    y = np.concatenate(list(map(lambda data: data[1], args)))
 
     if shuffle:
         order = np.random.permutation(X.shape[0])
