@@ -50,6 +50,7 @@ class MixInDeepEncoder(MixInEncoder):
         self.encoder.train()
 
         X, y = self._convert_dtype(X), self._convert_dtype(y)
+
         dataloder = self._loader_from_data(X, y)
         self._train(dataloder, n_iter=n_iter)
 
@@ -108,17 +109,17 @@ class NLPEncoder(MixInDeepEncoder):
     def __init__(self, shape: list[int]) -> None:
         super().__init__()
 
-        layers: list[nn.Module] = []
-        for i in range(len(shape) - 2):
-            layers.append(nn.Linear(shape[i], shape[i + 1]))
-            layers.append(nn.ReLU())
-
-        layers.append(nn.Linear(shape[-2], shape[-1]))
-        layers.append(nn.Softmax())
-
-        self._encoder = nn.Sequential(*layers)
+        self.shape = shape
+        self.adjusted = False
+        self._encoder = nn.Sequential()
+        self.encoder.train()
 
     def _train(self, dataloader: DataLoader, n_iter: int = 10_000) -> None:
+
+        if not self.adjusted:
+            X_sample, y_sample = next(iter(dataloader))
+            self.__adjust_nn(X_sample, y_sample)
+            self.adjusted = True
 
         running_loss = 0.0
         last_loss = 0.0
@@ -146,11 +147,32 @@ class NLPEncoder(MixInDeepEncoder):
                     tb_writer.add_scalar("Loss/train", last_loss, tb_x)
                     running_loss = 0.0
 
+    def __adjust_nn(self, X, y) -> None:
+        layers: list[nn.Module] = []
+
+        size_first = X.shape[1]
+        first_layer = nn.Linear(size_first, self.shape[0])
+
+        for i in range(len(self.shape) - 1):
+            layers.append(nn.Linear(self.shape[i], self.shape[i + 1]))
+            layers.append(nn.ReLU())
+
+        if len(y.shape) == 1:
+            size_last = 1
+        else:
+            size_last = y.shape[1]
+
+        last_layer = nn.Linear(self.shape[-1], size_last)
+
+        self._encoder = nn.Sequential(
+            first_layer, *layers, last_layer, nn.Softmax(dim=1)
+        )
+
 
 class DummyEncoder(MixInEncoder):
 
     def __init__(
-        self, output_size: int, weights: Optional[np.ndarray] = None
+        self, output_size: int = None, weights: Optional[np.ndarray] = None
     ) -> None:
         super().__init__()
         self.output_size = output_size
@@ -161,7 +183,8 @@ class DummyEncoder(MixInEncoder):
         X: Tensor | np.ndarray | pd.DataFrame,
         y: Tensor | np.ndarray | pd.DataFrame,
     ) -> None:
-        pass
+        if self.output_size is None:
+            self.output_size = y.shape[1]
 
     def predict(self, X: Tensor | np.ndarray | pd.DataFrame) -> np.ndarray:
         if self.weights is None:
