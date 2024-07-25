@@ -4,6 +4,7 @@ from typing import Literal, get_args
 
 import numpy as np
 from scipy.special import softmax
+from sklearn.linear_model import LogisticRegression
 
 SaticMethodTypes = Literal["accuracy", "difference"]
 
@@ -28,6 +29,36 @@ class MixInTargetWeighter(ABC):
         pass
 
 
+class MixInStaticTargetWeighter(MixInTargetWeighter):
+
+    def __init__(self, method: SaticMethodTypes = "accuracy") -> None:
+        super().__init__()
+        if method not in get_args(SaticMethodTypes):
+            raise TypeError(
+                f"method should be from the {get_args(SaticMethodTypes)}, got {method} instead."
+            )
+
+        self.method = method
+        self.weights = None
+
+    def _get_target_weights(
+        self, models_preds: np.ndarray, true_y: np.ndarray
+    ) -> np.ndarray:
+
+        if self.weights is None:
+            self.weights = self._find_best_weights(models_preds, true_y)
+
+        return self.weights.reshape(1, -1).repeat(
+            repeats=true_y.shape[0], axis=0
+        )
+
+    @abstractmethod
+    def _find_best_weights(
+        self, models_preds: np.ndarray, true_y: np.ndarray
+    ) -> np.ndarray:
+        pass
+
+
 class SoftMaxWeighter(MixInTargetWeighter):
 
     def __init__(self, regularization_term: float = 0) -> None:
@@ -44,31 +75,16 @@ class SoftMaxWeighter(MixInTargetWeighter):
         return weights
 
 
-class StaticGridWeighter(MixInTargetWeighter):
+class StaticGridWeighter(MixInStaticTargetWeighter):
 
     def __init__(
-        self, grid_points: int = 10, method: SaticMethodTypes = "accuracy"
+        self,
+        method: SaticMethodTypes = "accuracy",
+        grid_points: int = 10,
     ) -> None:
-        super().__init__()
-        if method not in get_args(SaticMethodTypes):
-            raise TypeError(
-                f"method should be from the {get_args(SaticMethodTypes)}, got {method} instead."
-            )
+        super().__init__(method)
 
         self.grid_points = grid_points
-        self.method = method
-        self.weights = None
-
-    def _get_target_weights(
-        self, models_preds: np.ndarray, true_y: np.ndarray
-    ) -> np.ndarray:
-
-        if self.weights is None:
-            self.weights = self._find_best_weights(models_preds, true_y)
-
-        return self.weights.reshape(1, -1).repeat(
-            repeats=true_y.shape[0], axis=0
-        )
 
     def _find_best_weights(
         self, models_preds: np.ndarray, true_y: np.ndarray
@@ -109,3 +125,20 @@ class StaticGridWeighter(MixInTargetWeighter):
             res = 1 - np.mean(np.abs(y_pred - true_y))
 
         return res
+
+
+class StaticLogisticWeighter(MixInStaticTargetWeighter):
+
+    def __init__(self, method: SaticMethodTypes = "accuracy") -> None:
+        super().__init__(method)
+
+    def _find_best_weights(
+        self, models_preds: np.ndarray, true_y: np.ndarray
+    ) -> np.ndarray:
+
+        linear_model = LogisticRegression()
+        linear_model.fit(models_preds, true_y)
+        weights = linear_model.coef_
+        weights = weights / weights.sum()
+
+        return weights
