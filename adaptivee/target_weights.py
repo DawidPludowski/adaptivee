@@ -6,6 +6,8 @@ import numpy as np
 from scipy.special import softmax
 from sklearn.linear_model import LogisticRegression
 
+from adaptivee.utils import deprecated
+
 SaticMethodTypes = Literal["accuracy", "difference"]
 
 
@@ -31,14 +33,9 @@ class MixInTargetWeighter(ABC):
 
 class MixInStaticTargetWeighter(MixInTargetWeighter):
 
-    def __init__(self, method: SaticMethodTypes = "accuracy") -> None:
+    def __init__(self) -> None:
         super().__init__()
-        if method not in get_args(SaticMethodTypes):
-            raise TypeError(
-                f"method should be from the {get_args(SaticMethodTypes)}, got {method} instead."
-            )
 
-        self.method = method
         self.weights = None
 
     def _get_target_weights(
@@ -61,9 +58,10 @@ class MixInStaticTargetWeighter(MixInTargetWeighter):
 
 class SoftMaxWeighter(MixInTargetWeighter):
 
-    def __init__(self, regularization_term: float = 0) -> None:
+    def __init__(
+        self,
+    ) -> None:
         super().__init__()
-        self.C = regularization_term
 
     def _get_target_weights(
         self, models_preds: np.ndarray, true_y: np.ndarray
@@ -75,6 +73,7 @@ class SoftMaxWeighter(MixInTargetWeighter):
         return weights
 
 
+@deprecated
 class StaticGridWeighter(MixInStaticTargetWeighter):
 
     def __init__(
@@ -82,8 +81,14 @@ class StaticGridWeighter(MixInStaticTargetWeighter):
         method: SaticMethodTypes = "accuracy",
         grid_points: int = 10,
     ) -> None:
-        super().__init__(method)
+        super().__init__()
 
+        if method not in get_args(SaticMethodTypes):
+            raise TypeError(
+                f"method should be from the {get_args(SaticMethodTypes)}, got {method} instead."
+            )
+
+        self.metohd = method
         self.grid_points = grid_points
 
     def _find_best_weights(
@@ -129,8 +134,8 @@ class StaticGridWeighter(MixInStaticTargetWeighter):
 
 class StaticLogisticWeighter(MixInStaticTargetWeighter):
 
-    def __init__(self, method: SaticMethodTypes = "accuracy") -> None:
-        super().__init__(method)
+    def __init__(self) -> None:
+        super().__init__()
 
     def _find_best_weights(
         self, models_preds: np.ndarray, true_y: np.ndarray
