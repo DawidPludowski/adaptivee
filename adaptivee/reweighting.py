@@ -59,7 +59,7 @@ class DirectionReweight(MixInReweight):
             initial_weights
             + (encoder_weights - initial_weights) * self.step_size
         )
-        weights = weights / weights.sum(dim=1)
+        # weights = weights / weights.sum(dim=1)
         return weights
 
 
@@ -72,8 +72,6 @@ class DirectionConstantReweight(MixInReweight):
     def _get_final_weights(
         self, encoder_weights: Tensor, initial_weights: Tensor | None = None
     ) -> Tensor:
-        weights = (
-            initial_weights + torch.sign(encoder_weights) * self.step_size
-        )
-        weights = weights / weights.sum(dim=1)
+        weights = initial_weights + np.sign(encoder_weights) * self.step_size
+        weights = weights / weights.sum(axis=1).reshape((-1, 1))
         return weights

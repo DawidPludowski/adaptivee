@@ -9,7 +9,7 @@ class Utils:
     def numpy_arrays_equal(
         a1: np.ndarray, a2: np.ndarray | float, precision: float = 1e-6
     ):
-        return all((a1 - a2) < precision)
+        return all(((a1 - a2) < precision).reshape(-1))
 
 
 @fixture(scope="session")
@@ -44,6 +44,7 @@ def models_pred() -> np.ndarray:
 
 @fixture(scope="session")
 def model_one_perfect_pred() -> np.ndarray:
+    """first model is perfect for true_y"""
     y_pred = np.array(
         [
             [1.0, 1.0, 0.9],
@@ -53,3 +54,29 @@ def model_one_perfect_pred() -> np.ndarray:
         ]
     )
     return y_pred
+
+
+@fixture(scope="session")
+def initial_weights():
+    weights = np.array(
+        [
+            [0.1, 0.0, 0.9],
+            [1.0, 0.0, 0.0],
+            [0.2, 0.5, 0.3],
+            [0.5, 0.0, 0.5],
+        ]
+    )
+    return weights
+
+
+@fixture(scope="session")
+def predicted_weights():
+    weights = np.array(
+        [
+            [0.15, 0.05, 0.8],
+            [0.5, 0.2, 0.3],
+            [0.1, 0.6, 0.3],
+            [0.5, 0.0, 0.5],
+        ]
+    )
+    return weights
