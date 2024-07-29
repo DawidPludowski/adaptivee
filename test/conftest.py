@@ -30,6 +30,19 @@ def true_y() -> np.ndarray:
 
 
 @fixture(scope="session")
+def onehot_pred_y() -> np.ndarray:
+    y_pred = np.array(
+        [
+            [0.1, 1.0, 0.9],
+            [1.0, 0.1, 0.8],
+            [0.1, 0.0, 0.3],
+            [0.0, 0.0, 0.5],
+        ]
+    )
+    return y_pred
+
+
+@fixture(scope="session")
 def models_pred() -> np.ndarray:
     y_pred = np.array(
         [

@@ -1,6 +1,7 @@
 import numpy as np
 
 from adaptivee.target_weights import (
+    OneHotWeighter,
     SoftMaxWeighter,
     StaticEqualWeighter,
     StaticLogisticWeighter,
@@ -55,3 +56,24 @@ def test_weights_size(true_y, models_pred):
     assert len(weights.shape) == 2
     assert weights.shape[0] == models_pred.shape[0]
     assert weights.shape[1] == models_pred.shape[1]
+
+
+def test_onehot_sum_to_1(true_y, onehot_pred_y):
+
+    weighter = OneHotWeighter()
+    weights = weighter.get_target_weights(onehot_pred_y, true_y)
+
+    assert all(weights.sum(axis=1) == 1)
+
+
+def test_onehot_equal_share(true_y, onehot_pred_y):
+
+    weighter = OneHotWeighter()
+    weights = weighter.get_target_weights(onehot_pred_y, true_y)
+
+    assert weights[3, 0] == 0.5
+    assert weights[3, 1] == 0.5
+
+    assert weights[0, 1] == 1
+    assert weights[1, 0] == 1
+    assert weights[2, 1] == 1

@@ -5,9 +5,13 @@ repos:
         name: update-requirements
         entry: ./scripts/update_requirements.sh
         language: script
+        pass_filenames: false
+        always_run: true
   - repo: local
     hooks:
       - id: run-test
         name: run-test
         entry: ./scripts/run_tests.sh
         language: script
+        pass_filenames: false
+        always_run: true

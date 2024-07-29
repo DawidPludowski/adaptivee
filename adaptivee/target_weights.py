@@ -73,6 +73,21 @@ class SoftMaxWeighter(MixInTargetWeighter):
         return weights
 
 
+class OneHotWeighter(MixInTargetWeighter):
+
+    def _get_target_weights(
+        self, models_preds: np.ndarray, true_y: np.ndarray
+    ) -> np.ndarray:
+
+        diffs = np.abs(models_preds - true_y)
+        best_scores = diffs.min(axis=1)
+
+        weights = np.where(diffs == best_scores[:, np.newaxis], 1, 0)
+        weights = weights / weights.sum(axis=1).reshape((-1, 1))
+
+        return weights
+
+
 @deprecated
 class StaticGridWeighter(MixInStaticTargetWeighter):
 
