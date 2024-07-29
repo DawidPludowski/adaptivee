@@ -2,6 +2,7 @@ import numpy as np
 from loguru import logger
 
 from adaptivee.ensembler import AdaptiveEnsembler as Adaptivee
+from adaptivee.target_weights import MixInStaticTargetWeighter
 
 
 class AdaptiveEnsembler(Adaptivee):
@@ -23,8 +24,9 @@ class AdaptiveEnsembler(Adaptivee):
 
         self.static_weights = static_weights
 
-        logger.info("Encoder training...")
-        self.encoder.train(X, weights)
+        if not isinstance(self.target_weighter, MixInStaticTargetWeighter):
+            logger.info("Encoder training...")
+            self.encoder.train(X, weights)
 
         if return_score:
             raise NotImplementedError()

@@ -2,7 +2,10 @@ from functools import partial
 
 import numpy as np
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
@@ -13,10 +16,11 @@ from adaptivee.reweighting import (
     SimpleReweight,
 )
 from adaptivee.target_weights import (
+    MixInStaticTargetWeighter,
     MixInTargetWeighter,
+    OneHotWeighter,
     SoftMaxWeighter,
     StaticEqualWeighter,
-    StaticGridWeighter,
     StaticLogisticWeighter,
 )
 from analysis.data import (
@@ -51,14 +55,20 @@ MODELS: list[tuple[any]] = [
         DecisionTreeClassifier,
         SVC,
         LinearDiscriminantAnalysis,
+        GaussianNB,
+        RandomForestClassifier,
+        KNeighborsClassifier,
     )
 ]
 
 ENCODERS: list[MixInEncoder] = [partial(NLPEncoder, [100, 100])]
 REWEIGHTERS: list[MixInReweight] = [SimpleReweight, DirectionReweight]
 TARGET_WEIGHTERS: list[MixInTargetWeighter] = [
+    OneHotWeighter,
     SoftMaxWeighter,
-    StaticGridWeighter,
+]
+
+STATIC_TARGET_WEIGHTERS: list[MixInStaticTargetWeighter] = [
     StaticLogisticWeighter,
     StaticEqualWeighter,
 ]

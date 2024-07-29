@@ -4,12 +4,15 @@ from itertools import product
 
 from loguru import logger
 
+from adaptivee.encoders import DummyEncoder
+from adaptivee.reweighting import SimpleReweight
 from analysis.auto_report import AutoReport, AutoSummaryReport
 from analysis.configs import (
     DATASETS,
     ENCODERS,
     MODELS,
     REWEIGHTERS,
+    STATIC_TARGET_WEIGHTERS,
     TARGET_WEIGHTERS,
 )
 
@@ -29,6 +32,34 @@ def main() -> None:
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
+    logger.info("STATIC APPROACHES")
+    for idx, combination in enumerate(
+        product(DATASETS, STATIC_TARGET_WEIGHTERS, MODELS)
+    ):
+        logger.info(f"Start experiment #{idx:02}")
+
+        data_name = combination[0][0]
+        X, y = combination[0][1][0], combination[0][1][1]
+        encoder = DummyEncoder
+        reweighter = SimpleReweight
+        target_weighter = combination[1]
+        models = combination[2]
+
+        report = AutoReport(
+            X,
+            y,
+            models,
+            target_weighter,
+            encoder,
+            reweighter,
+            report_name=f"{timestamp}/{data_name}/{__get_class_name(encoder)}"
+            f"_{__get_class_name(reweighter)}_{__get_class_name(target_weighter)}",
+            data_name=data_name,
+        )
+
+        report.make_report()
+
+    logger.info("DYNAMIC APPROACHES")
     for idx, combination in enumerate(
         product(DATASETS, ENCODERS, REWEIGHTERS, TARGET_WEIGHTERS, MODELS)
     ):

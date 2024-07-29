@@ -49,7 +49,8 @@ class AdaptiveEnsembler:
 
         self.static_weights = static_weights
 
-        self.encoder.train(X, weights)
+        if not isinstance(self.target_weighter, MixInStaticTargetWeighter):
+            self.encoder.train(X, weights)
 
         if return_score:
             raise NotImplementedError()
@@ -63,10 +64,13 @@ class AdaptiveEnsembler:
         return y_pred_final
 
     def get_weights(self, X: np.ndarray) -> np.ndarray:
-        weights = self.encoder.predict(X)
-        reweights = self.reweighter.get_final_weights(
-            weights, self.static_weights
-        )
+        if isinstance(self.target_weighter, MixInStaticTargetWeighter):
+            reweights = self.static_weights
+        else:
+            weights = self.encoder.predict(X)
+            reweights = self.reweighter.get_final_weights(
+                weights, self.static_weights
+            )
 
         return reweights
 
