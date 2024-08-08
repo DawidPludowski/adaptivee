@@ -4,9 +4,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from loguru import logger
-from openml import datasets, tasks
+from openml import datasets, study, tasks
 from sklearn.compose import make_column_selector, make_column_transformer
 from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
@@ -82,11 +83,9 @@ def _ensure_last_target(df: pd.DataFrame, target_name: str) -> pd.DataFrame:
     return df
 
 
-def get_tasks() -> dict[str, any]:
-    classification_tasks = tasks.list_tasks(
-        task_type=tasks.TaskType.SUPERVISED_CLASSIFICATION
-    )
-    return classification_tasks
+def get_tasks() -> list[int]:
+    tasks_ids = study.get_suite(99).tasks
+    return tasks_ids
 
 
 def filter_tasks(
@@ -112,8 +111,23 @@ def filter_tasks(
     return tasks_
 
 
+def create_split(
+    data: pd.DataFrame, target_feature: str, seed: int
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+
+    colnames = data.columns
+
+    df_train, df_test = train_test_split(
+        data, stratify=data[target_feature], shuffle=True, random_state=seed
+    )
+    df_train = pd.DataFrame(data=df_train, columns=colnames)
+    df_test = pd.DataFrame(data=df_test, columns=colnames)
+
+    return df_train, df_test
+
+
 def download_tasks(
-    tasks_: list[dict[str, any]],
+    tasks_: list[int],
     download_dst: str | Path,
     max_downloads: int = 100,
     shuffle: bool = True,
@@ -123,29 +137,43 @@ def download_tasks(
     download_dst = Path(download_dst)
     download_dst.mkdir(exist_ok=True)
 
+    (download_dst / "train").mkdir(exist_ok=True)
+    (download_dst / "test").mkdir(exist_ok=True)
+    (download_dst / "encoder").mkdir(exist_ok=True)
+
     if shuffle:
         random.seed(seed)
         random.shuffle(tasks_)
 
     downloaded_cnt = 0
 
-    for task in tasks_:
-        task_name = task["name"]
+    for id_ in tasks_:
+        task = tasks.get_task(id_, download_splits=False)
+
+        dataset = datasets.get_dataset(
+            task.dataset_id,
+            download_data=True,
+            download_qualities=False,
+            download_features_meta_data=False,
+        )
+
+        task_name = dataset.name
+
         logger.info(
             f"downloading task: {task_name}, {downloaded_cnt}/{max_downloads}"
         )
 
-        target_name = task["target_feature"]
-        data = datasets.get_dataset(
-            task["did"],
-            download_data=True,
-            download_qualities=False,
-            download_features_meta_data=False,
-        ).get_data()[0]
+        target_name = task.target_name
+        data = dataset.get_data()[0]
 
         data_size = data.memory_usage(index=True).sum() / 1024 // 1024
         if data_size > 10:
-            logger.warning(f"Dataset skipped due to its size: {data_size}")
+            logger.warning(f"Dataset skipped due to its size: {data_size} MB")
+            continue
+
+        n_classes = np.unique(data[target_name]).shape[0]
+        if n_classes != 2:
+            logger.warning(f"Dataset skipped due to class number: {n_classes}")
             continue
 
         logger.info(f"data size: {data_size} MB")
@@ -160,7 +188,24 @@ def download_tasks(
         df = pd.DataFrame(data=X)
         df["target"] = y
 
-        df.to_csv(download_dst / f"{task_name}.csv", index=False)
+        if downloaded_cnt < 20:
+
+            df_train, df_test = create_split(
+                df, target_feature="target", seed=seed
+            )
+
+            df_train.to_csv(
+                download_dst / "train" / f"{task_name}.csv", index=False
+            )
+            df_test.to_csv(
+                download_dst / "test" / f"{task_name}.csv", index=False
+            )
+
+        else:
+
+            df.to_csv(
+                download_dst / "encoder" / f"{task_name}.csv", index=False
+            )
 
         downloaded_cnt += 1
 
@@ -170,13 +215,16 @@ def download_tasks(
             )
             break
 
+    logger.info(f"Done. Total number of tasks: {downloaded_cnt}")
+
 
 def main(download_dst="resources/data/openml", seed: int = 100) -> None:
-    logger.info("Searching for classification tasks...")
+
+    logger.info("Searching for CC18 AutoML tasks...")
     tasks_ = get_tasks()
 
-    logger.info("Filtering out tasks...")
-    tasks_ = filter_tasks(tasks_, ADDITIONAL_CONDITIONS)
+    # logger.info("Filtering out tasks...")
+    # tasks_ = filter_tasks(tasks_, ADDITIONAL_CONDITIONS)
 
     logger.info(f"Downloading data to location: {download_dst} ...")
     download_tasks(tasks_, download_dst, seed=seed)
