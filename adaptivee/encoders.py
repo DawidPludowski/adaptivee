@@ -104,7 +104,7 @@ class MixInDeepEncoder(MixInEncoder):
         return self._encoder
 
 
-class NLPEncoder(MixInDeepEncoder):
+class MLPEncoder(MixInDeepEncoder):
 
     def __init__(self, shape: list[int]) -> None:
         super().__init__()

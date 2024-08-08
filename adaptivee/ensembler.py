@@ -20,7 +20,7 @@ class AdaptiveEnsembler:
         reweighter: MixInReweight = SimpleReweight(),
         static_weighter: MixInStaticTargetWeighter = StaticLogisticWeighter(),
         is_models_trained: bool = True,
-        predict_fn: str = "predict",
+        predict_fn: str = "predict_proba",
         train_fn: str = "fit",
     ) -> None:
         self.models = models
@@ -91,14 +91,14 @@ class AdaptiveEnsembler:
         if not self.is_models_trained:
             raise Exception("Cannot get predicitons from not trained models.")
 
-        if self.predict_fn != "predict":
+        if self.predict_fn != "predict_proba":
             raise NotImplementedError(
-                'Using function other than "predict" for prediction is not supported'
+                'Using function other than "predict_proba" for prediction is not supported'
             )
 
         y_preds = []
         for model in self.models:
-            y_pred = model.predict(X)
+            y_pred = model.predict_proba(X)[:, 1]
             y_preds.append(y_pred.reshape(-1, 1))
 
         y_preds = np.hstack(y_preds)
