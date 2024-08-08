@@ -44,7 +44,7 @@ class MixInDeepEncoder(MixInEncoder):
         self,
         X: Tensor | np.ndarray | pd.DataFrame,
         y: Tensor | np.ndarray | pd.DataFrame,
-        n_iter: int = 100,
+        n_iter: int = 1000,
     ) -> None:
 
         self.encoder.train()
@@ -104,7 +104,7 @@ class MixInDeepEncoder(MixInEncoder):
         return self._encoder
 
 
-class NLPEncoder(MixInDeepEncoder):
+class MLPEncoder(MixInDeepEncoder):
 
     def __init__(self, shape: list[int]) -> None:
         super().__init__()
@@ -126,7 +126,7 @@ class NLPEncoder(MixInDeepEncoder):
 
         tb_writer = self._get_tb_writer("NLP")
 
-        loss_fn = nn.CrossEntropyLoss()
+        loss_fn = nn.MSELoss()
         optimizer = torch.optim.Adam(self.encoder.parameters(), lr=0.0001)
 
         for epoch_index in range(n_iter):

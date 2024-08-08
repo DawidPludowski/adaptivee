@@ -16,10 +16,7 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split
 
-from adaptivee.encoders import MixInEncoder
-from adaptivee.ensembler import AdaptiveEnsembler
-from adaptivee.reweighting import MixInReweight
-from adaptivee.target_weights import MixInTargetWeighter
+from analysis.ensembler import AdaptiveEnsembler
 
 # from analysis.metrics import accuracy as accuracy_score
 # from analysis.metrics import balanced_accuracy as balanced_accuracy_score
@@ -275,7 +272,8 @@ class AutoSummaryReport:
             )
             g.set(ylabel=f"{metric_name}", title=f"{metric_name} score")
             g.set_ylim(-0.1, 1.1)
-            plt.xticks(rotation=45)
+            # plt.figure(figsize=(16, 9))
+            plt.xticks(rotation=30)
             plt.tight_layout()
             plt.savefig(f"{self.root_dir}/score_{metric_name}")
             plt.clf()

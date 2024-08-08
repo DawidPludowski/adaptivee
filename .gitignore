@@ -169,3 +169,7 @@ tensorboard/*
 
 # analysis reports
 report/*
+
+# data & models
+resources/data/*
+resources/models/*
