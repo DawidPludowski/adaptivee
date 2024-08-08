@@ -67,7 +67,7 @@ class SoftMaxWeighter(MixInTargetWeighter):
         self, models_preds: np.ndarray, true_y: np.ndarray
     ) -> np.ndarray:
 
-        diffs = models_preds - true_y
+        diffs = np.abs(models_preds) - true_y
         weights = softmax(1 - diffs, axis=1)
 
         return weights
