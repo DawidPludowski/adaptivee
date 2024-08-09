@@ -60,7 +60,7 @@ MODELS: list[tuple[any]] = [
     (
         LogisticRegression,
         DecisionTreeClassifier,
-        partial(SVC, probability=True),
+        # partial(SVC, probability=True),
         LinearDiscriminantAnalysis,
         GaussianNB,
         RandomForestClassifier,

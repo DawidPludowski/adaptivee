@@ -124,7 +124,7 @@ class MLPEncoder(MixInDeepEncoder):
         running_loss = 0.0
         last_loss = 0.0
 
-        tb_writer = self._get_tb_writer("NLP")
+        tb_writer = self._get_tb_writer("MLP")
 
         loss_fn = nn.MSELoss()
         optimizer = torch.optim.Adam(self.encoder.parameters(), lr=0.0001)

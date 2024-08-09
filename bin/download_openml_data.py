@@ -9,7 +9,7 @@ from sklearn.compose import make_column_selector, make_column_transformer
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 
 ADDITIONAL_CONDITIONS: list[callable] = [
     lambda task: task["NumberOfInstances"] < 10_000,
@@ -184,6 +184,8 @@ def download_tasks(
 
         pipeline = _get_generic_preprocessing()
         X = pipeline.fit_transform(X)
+
+        y = LabelEncoder().fit_transform(pd.DataFrame(y))
 
         df = pd.DataFrame(data=X)
         df["target"] = y
