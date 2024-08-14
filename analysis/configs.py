@@ -9,7 +9,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from adaptivee.encoders import MixInEncoder, MLPEncoder
+from adaptivee.encoders import LiltabEncoder, MixInEncoder, MLPEncoder
 from adaptivee.reweighting import (
     DirectionReweight,
     MixInReweight,
@@ -68,7 +68,10 @@ MODELS: list[tuple[any]] = [
     )
 ]
 
-ENCODERS: list[MixInEncoder] = [partial(MLPEncoder, [100, 100])]
+ENCODERS: list[MixInEncoder] = [
+    partial(LiltabEncoder, model_path="resources/models/final_model.ckpt"),
+    partial(MLPEncoder, [100, 100]),
+]
 REWEIGHTERS: list[MixInReweight] = [SimpleReweight, DirectionReweight]
 TARGET_WEIGHTERS: list[MixInTargetWeighter] = [
     OneHotWeighter,
