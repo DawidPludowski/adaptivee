@@ -177,3 +177,6 @@ resources/models/*
 # liltab-related logs
 lightning_logs/*
 results/*
+
+# slurm logs
+**/*.log

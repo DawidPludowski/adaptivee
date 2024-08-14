@@ -8,13 +8,14 @@ from adaptivee.encoders import DummyEncoder
 from adaptivee.reweighting import SimpleReweight
 from analysis.auto_report import AutoReport, AutoSummaryReport
 from analysis.configs import (
-    DATASETS,
+    # DATASETS,
     ENCODERS,
     MODELS,
     REWEIGHTERS,
     STATIC_TARGET_WEIGHTERS,
     TARGET_WEIGHTERS,
 )
+from analysis.data.openml import get_data
 
 
 def __get_class_name(obj: any) -> str:
@@ -33,59 +34,71 @@ def main() -> None:
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     logger.info("STATIC APPROACHES")
-    for idx, combination in enumerate(
-        product(DATASETS, STATIC_TARGET_WEIGHTERS, MODELS)
-    ):
-        logger.info(f"Start experiment #{idx:02}")
+    
+    for df_train, df_test, data_name in get_data('resources/data/openml'):
+        
+        X_train, y_train = df_train.iloc[:, :-1], df_train.iloc[:, -1]
+        X_test, y_test = df_test.iloc[:, :-1], df_test.iloc[:, -1]
+    
+        for idx, combination in enumerate(
+            product(STATIC_TARGET_WEIGHTERS, MODELS)
+        ):
+            logger.info(f"Start experiment #{idx:02}")
 
-        data_name = combination[0][0]
-        X, y = combination[0][1][0], combination[0][1][1]
-        encoder = DummyEncoder
-        reweighter = SimpleReweight
-        target_weighter = combination[1]
-        models = combination[2]
+            encoder = DummyEncoder
+            reweighter = SimpleReweight
+            target_weighter = combination[0]
+            models = combination[1]
 
-        report = AutoReport(
-            X,
-            y,
-            models,
-            target_weighter,
-            encoder,
-            reweighter,
-            report_name=f"{timestamp}/{data_name}/{__get_class_name(encoder)}"
-            f"_{__get_class_name(reweighter)}_{__get_class_name(target_weighter)}",
-            data_name=data_name,
-        )
+            report = AutoReport(
+                X_train,
+                y_train,
+                X_test,
+                y_test,
+                models,
+                target_weighter,
+                encoder,
+                reweighter,
+                report_name=f"{timestamp}/{data_name}/{__get_class_name(encoder)}"
+                f"_{__get_class_name(reweighter)}_{__get_class_name(target_weighter)}",
+                data_name=data_name,
+            )
 
-        report.make_report()
+            report.make_report()
 
     logger.info("DYNAMIC APPROACHES")
-    for idx, combination in enumerate(
-        product(DATASETS, ENCODERS, REWEIGHTERS, TARGET_WEIGHTERS, MODELS)
-    ):
+    
+    for df_train, df_test, data_name in get_data('resources/data/openml'):
+        
+        X_train, y_train = df_train.iloc[:, :-1], df_train.iloc[:, -1]
+        X_test, y_test = df_test.iloc[:, :-1], df_test.iloc[:, -1]
+    
+        for idx, combination in enumerate(
+            product(ENCODERS, REWEIGHTERS, TARGET_WEIGHTERS, MODELS)
+        ):
 
-        logger.info(f"Start experiment #{idx:02}")
+            logger.info(f"Start experiment #{idx:02}")
 
-        data_name = combination[0][0]
-        X, y = combination[0][1][0], combination[0][1][1]
-        encoder = combination[1]
-        reweighter = combination[2]
-        target_weighter = combination[3]
-        models = combination[4]
+            encoder = combination[0]
+            reweighter = combination[1]
+            target_weighter = combination[2]
+            models = combination[3]
 
-        report = AutoReport(
-            X,
-            y,
-            models,
-            target_weighter,
-            encoder,
-            reweighter,
-            report_name=f"{timestamp}/{data_name}/{__get_class_name(encoder)}"
-            f"_{__get_class_name(reweighter)}_{__get_class_name(target_weighter)}",
-            data_name=data_name,
-        )
+            report = AutoReport(
+                X_train,
+                y_train,
+                X_test,
+                y_test,
+                models,
+                target_weighter,
+                encoder,
+                reweighter,
+                report_name=f"{timestamp}/{data_name}/{__get_class_name(encoder)}"
+                f"_{__get_class_name(reweighter)}_{__get_class_name(target_weighter)}",
+                data_name=data_name,
+            )
 
-        report.make_report()
+            report.make_report()
 
     auto_summary_report = AutoSummaryReport(f"report/{timestamp}")
     auto_summary_report.make_report()

@@ -6,7 +6,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 import torch
-from liltab.data.dataloaders import FewShotDataLoader
+from liltab.data.dataloaders import ComposedDataLoader, FewShotDataLoader
 from liltab.data.datasets import PandasDataset
 from liltab.model.heterogenous_attributes_network import (
     HeterogenousAttributesNetwork,
@@ -222,15 +222,15 @@ class LiltabEncoder(MixInDeepEncoder):
             df, preprocess_data=False, response_regex="target_*"
         )
         dataloader = FewShotDataLoader(dataset, support_size=32, query_size=0)
+        composed_dataloader = ComposedDataLoader([dataloader])
 
-        self._train(dataloader, n_iter)
-
-        return super().train(X, y, n_iter)
+        self._train(composed_dataloader, n_iter)
 
     def _train(self, dataloader: DataLoader, n_iter: int) -> None:
 
         if not self.adjusted:
-            _, y_sample, _, _ = next(iter(dataloader))
+            
+            y_sample = next(iter(dataloader))[0][1][1]
             self.encoder.change_head(y_sample.shape[1])
             self.adjusted = True
 
