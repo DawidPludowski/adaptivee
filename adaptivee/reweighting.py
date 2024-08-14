@@ -46,7 +46,7 @@ class SimpleReweight(MixInReweight):
 
 class DirectionReweight(MixInReweight):
 
-    def __init__(self, step_size: float = 0.01) -> None:
+    def __init__(self, step_size: float = 0.1) -> None:
         super().__init__()
         self.step_size = step_size
 

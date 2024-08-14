@@ -14,13 +14,8 @@ from sklearn.metrics import (
     f1_score,
     roc_auc_score,
 )
-from sklearn.model_selection import train_test_split
 
 from analysis.ensembler import AdaptiveEnsembler
-
-# from analysis.metrics import accuracy as accuracy_score
-# from analysis.metrics import balanced_accuracy as balanced_accuracy_score
-# from analysis.metrics import f1 as f1_score
 
 
 class AutoReport:
@@ -91,7 +86,12 @@ class AutoReport:
 
     def make_experiment(self) -> None:
 
-        X_train, y_train, X_test, y_test = self.X_train, self.y_train, self.X_test, self.y_test
+        X_train, y_train, X_test, y_test = (
+            self.X_train,
+            self.y_train,
+            self.X_test,
+            self.y_test,
+        )
         self.ensemble.create_adaptive_ensembler(X_train, y_train)
 
         self.__report_metrics(X_train, y_train, X_test, y_test)
@@ -129,19 +129,26 @@ class AutoReport:
         y_train_pred = self.ensemble.predict(X_train)
         y_test_pred = self.ensemble.predict(X_test)
 
+        y_train_pred_bin = (y_train_pred > 0.5).astype(int)
+        y_test_pred_bin = (y_test_pred > 0.5).astype(int)
+
         metrics = {
-            # 0: ["acc", "train", accuracy_score(y_train, y_train_pred)],
-            # 1: ["acc", "test", accuracy_score(y_test, y_test_pred)],
+            0: ["acc", "train", accuracy_score(y_train, y_train_pred_bin)],
+            1: ["acc", "test", accuracy_score(y_test, y_test_pred_bin)],
             2: ["roc-auc", "train", roc_auc_score(y_train, y_train_pred)],
             3: ["roc-auc", "test", roc_auc_score(y_test, y_test_pred)],
-            # 4: [
-            #     "acc-b",
-            #     "train",
-            #     balanced_accuracy_score(y_train, y_train_pred),
-            # ],
-            # 5: ["acc-b", "test", balanced_accuracy_score(y_test, y_test_pred)],
-            # 6: ["f1", "train", f1_score(y_train, y_train_pred)],
-            # 7: ["f1", "test", f1_score(y_test, y_test_pred)],
+            4: [
+                "acc-b",
+                "train",
+                balanced_accuracy_score(y_train, y_train_pred_bin),
+            ],
+            5: [
+                "acc-b",
+                "test",
+                balanced_accuracy_score(y_test, y_test_pred_bin),
+            ],
+            6: ["f1", "train", f1_score(y_train, y_train_pred_bin)],
+            7: ["f1", "test", f1_score(y_test, y_test_pred_bin)],
         }
 
         df = pd.DataFrame(data=metrics).T
@@ -268,6 +275,7 @@ class AutoSummaryReport:
     def __summarize_metrics(self, metrics: pd.DataFrame) -> None:
 
         for metric_name in metrics["metric"].unique():
+
             g = sns.boxplot(
                 data=metrics[metrics["metric"] == metric_name],
                 x="experiment_name",
