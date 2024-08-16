@@ -124,7 +124,7 @@ class MLPEncoder(MixInDeepEncoder):
         self._encoder = nn.Sequential()
         self.encoder.train()
 
-    def _train(self, dataloader: DataLoader, n_iter: int = 10_000) -> None:
+    def _train(self, dataloader: DataLoader, n_iter: int = 1_000) -> None:
 
         if not self.adjusted:
             X_sample, y_sample = next(iter(dataloader))
@@ -229,7 +229,7 @@ class LiltabEncoder(MixInDeepEncoder):
     def _train(self, dataloader: DataLoader, n_iter: int) -> None:
 
         if not self.adjusted:
-            
+
             y_sample = next(iter(dataloader))[0][1][1]
             self.encoder.change_head(y_sample.shape[1])
             self.adjusted = True
