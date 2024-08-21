@@ -269,6 +269,9 @@ class AutoSummaryReport:
 
         return metrics
 
+    def get_metrics(self):
+        return self.__get_metrics()
+
     def __make_rank_test(self, metrics: pd.DataFrame) -> None:
         warnings.warn("Rank test not implemented")
 

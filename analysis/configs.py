@@ -10,28 +10,16 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
 from adaptivee.encoders import LiltabEncoder, MixInEncoder, MLPEncoder
-from adaptivee.reweighting import (
-    DirectionReweight,
-    MixInReweight,
-    SimpleReweight,
-)
-from adaptivee.target_weights import (
-    MixInStaticTargetWeighter,
-    MixInTargetWeighter,
-    OneHotWeighter,
-    SoftMaxWeighter,
-    StaticEqualWeighter,
-    StaticLogisticWeighter,
-)
-from analysis.data import (
-    blur_data,
-    change_position,
-    create_circles,
-    create_cubes,
-    create_linear,
-    create_normal_distribution,
-    mix_data,
-)
+from adaptivee.reweighting import (DirectionReweight, MixInReweight,
+                                   SimpleReweight)
+from adaptivee.target_weights import (MixInStaticTargetWeighter,
+                                      MixInTargetWeighter, OneHotWeighter,
+                                      SoftMaxWeighter, StaticEqualWeighter,
+                                      StaticGridWeighter,
+                                      StaticLogisticWeighter)
+from analysis.data import (blur_data, change_position, create_circles,
+                           create_cubes, create_linear,
+                           create_normal_distribution, mix_data)
 
 DATASETS: list[tuple[str, tuple[np.ndarray, np.ndarray]]] = [
     (
@@ -81,4 +69,5 @@ TARGET_WEIGHTERS: list[MixInTargetWeighter] = [
 STATIC_TARGET_WEIGHTERS: list[MixInStaticTargetWeighter] = [
     StaticLogisticWeighter,
     StaticEqualWeighter,
+    StaticGridWeighter
 ]

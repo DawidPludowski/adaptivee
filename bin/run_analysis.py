@@ -8,12 +8,8 @@ from adaptivee.encoders import DummyEncoder
 from adaptivee.reweighting import SimpleReweight
 from analysis.auto_report import AutoReport, AutoSummaryReport
 from analysis.configs import REWEIGHTERS  # DATASETS,
-from analysis.configs import (
-    ENCODERS,
-    MODELS,
-    STATIC_TARGET_WEIGHTERS,
-    TARGET_WEIGHTERS,
-)
+from analysis.configs import (ENCODERS, MODELS, STATIC_TARGET_WEIGHTERS,
+                              TARGET_WEIGHTERS)
 from analysis.data.openml import get_data
 
 
@@ -77,8 +73,14 @@ def main() -> None:
 
     for df_train, df_test, data_name in get_data("resources/data/openml"):
 
-        X_train, y_train = df_train.iloc[:, :-1], df_train.iloc[:, -1]
-        X_test, y_test = df_test.iloc[:, :-1], df_test.iloc[:, -1]
+        X_train, y_train = (
+            df_train.iloc[:, :-1].to_numpy(),
+            df_train.iloc[:, -1].to_numpy(),
+        )
+        X_test, y_test = (
+            df_test.iloc[:, :-1].to_numpy(),
+            df_test.iloc[:, -1].to_numpy(),
+        )
 
         logger.info(f"Start data: {data_name}")
 
