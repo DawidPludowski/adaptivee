@@ -9,29 +9,17 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from adaptivee.encoders import MixInEncoder, MLPEncoder
-from adaptivee.reweighting import (
-    DirectionReweight,
-    MixInReweight,
-    SimpleReweight,
-)
-from adaptivee.target_weights import (
-    MixInStaticTargetWeighter,
-    MixInTargetWeighter,
-    OneHotWeighter,
-    SoftMaxWeighter,
-    StaticEqualWeighter,
-    StaticLogisticWeighter,
-)
-from analysis.data import (
-    blur_data,
-    change_position,
-    create_circles,
-    create_cubes,
-    create_linear,
-    create_normal_distribution,
-    mix_data,
-)
+from adaptivee.encoders import LiltabEncoder, MixInEncoder, MLPEncoder
+from adaptivee.reweighting import (DirectionReweight, MixInReweight,
+                                   SimpleReweight)
+from adaptivee.target_weights import (MixInStaticTargetWeighter,
+                                      MixInTargetWeighter, OneHotWeighter,
+                                      SoftMaxWeighter, StaticEqualWeighter,
+                                      StaticGridWeighter,
+                                      StaticLogisticWeighter)
+from analysis.data import (blur_data, change_position, create_circles,
+                           create_cubes, create_linear,
+                           create_normal_distribution, mix_data)
 
 DATASETS: list[tuple[str, tuple[np.ndarray, np.ndarray]]] = [
     (
@@ -60,7 +48,7 @@ MODELS: list[tuple[any]] = [
     (
         LogisticRegression,
         DecisionTreeClassifier,
-        partial(SVC, probability=True),
+        # partial(SVC, probability=True),
         LinearDiscriminantAnalysis,
         GaussianNB,
         RandomForestClassifier,
@@ -68,7 +56,10 @@ MODELS: list[tuple[any]] = [
     )
 ]
 
-ENCODERS: list[MixInEncoder] = [partial(MLPEncoder, [100, 100])]
+ENCODERS: list[MixInEncoder] = [
+    partial(LiltabEncoder, model_path="resources/models/final_model.ckpt"),
+    partial(MLPEncoder, [100, 100]),
+]
 REWEIGHTERS: list[MixInReweight] = [SimpleReweight, DirectionReweight]
 TARGET_WEIGHTERS: list[MixInTargetWeighter] = [
     OneHotWeighter,
@@ -78,4 +69,5 @@ TARGET_WEIGHTERS: list[MixInTargetWeighter] = [
 STATIC_TARGET_WEIGHTERS: list[MixInStaticTargetWeighter] = [
     StaticLogisticWeighter,
     StaticEqualWeighter,
+    StaticGridWeighter
 ]

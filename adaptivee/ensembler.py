@@ -1,13 +1,13 @@
+import warnings
+
 import numpy as np
 
 from adaptivee.encoders import MixInEncoder
 from adaptivee.reweighting import MixInReweight, SimpleReweight
-from adaptivee.target_weights import (
-    MixInStaticTargetWeighter,
-    MixInTargetWeighter,
-    SoftMaxWeighter,
-    StaticLogisticWeighter,
-)
+from adaptivee.target_weights import (MixInStaticTargetWeighter,
+                                      MixInTargetWeighter, SoftMaxWeighter,
+                                      StaticGridWeighter,
+                                      StaticLogisticWeighter)
 
 
 class AdaptiveEnsembler:
@@ -18,7 +18,7 @@ class AdaptiveEnsembler:
         encoder: MixInEncoder,
         target_weighter: MixInTargetWeighter = SoftMaxWeighter(),
         reweighter: MixInReweight = SimpleReweight(),
-        static_weighter: MixInStaticTargetWeighter = StaticLogisticWeighter(),
+        static_weighter: MixInStaticTargetWeighter = StaticGridWeighter(),
         is_models_trained: bool = True,
         predict_fn: str = "predict_proba",
         train_fn: str = "fit",
@@ -27,7 +27,13 @@ class AdaptiveEnsembler:
         self.encoder = encoder
         self.target_weighter = target_weighter
         self.reweighter = reweighter
-        self.static_weighter = static_weighter
+        
+        if isinstance(target_weighter, MixInStaticTargetWeighter):
+            warnings.warn(f'Change static_weighter ({type(static_weighter).__name__})'
+                          f'to the target_weighter ({type(target_weighter).__name__})')
+            self.static_weighter = target_weighter
+        else:
+            self.static_weighter = static_weighter
 
         self.predict_fn = predict_fn
         self.train_fn = train_fn
@@ -60,12 +66,15 @@ class AdaptiveEnsembler:
 
         final_weights = self.get_weights(X)
 
-        y_pred_final = np.mean(y_preds * final_weights, axis=1)
+        y_pred_final = np.sum(y_preds * final_weights, axis=1)
         return y_pred_final
 
     def get_weights(self, X: np.ndarray) -> np.ndarray:
         if isinstance(self.target_weighter, MixInStaticTargetWeighter):
-            reweights = self.static_weights
+            reweights = self.static_weights.reshape(1, -1).repeat(
+            repeats=X.shape[0], axis=0
+        )
+            
         else:
             weights = self.encoder.predict(X)
             reweights = self.reweighter.get_final_weights(
@@ -103,4 +112,5 @@ class AdaptiveEnsembler:
 
         y_preds = np.hstack(y_preds)
 
+        return y_preds
         return y_preds

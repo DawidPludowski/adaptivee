@@ -3,6 +3,7 @@ from itertools import combinations
 from typing import Literal, get_args
 
 import numpy as np
+import pandas as pd
 from scipy.special import softmax
 from sklearn.linear_model import LogisticRegression
 
@@ -17,8 +18,12 @@ class MixInTargetWeighter(ABC):
         super().__init__()
 
     def get_target_weights(
-        self, models_preds: np.ndarray, true_y: np.ndarray
+        self, models_preds: np.ndarray, true_y: np.ndarray | pd.Series
     ) -> np.ndarray:
+        
+        if isinstance(true_y, pd.Series):
+            true_y = true_y.to_numpy()
+        
         true_y = true_y.reshape((-1, 1))
         weights = self._get_target_weights(models_preds, true_y)
 
@@ -58,17 +63,16 @@ class MixInStaticTargetWeighter(MixInTargetWeighter):
 
 class SoftMaxWeighter(MixInTargetWeighter):
 
-    def __init__(
-        self,
-    ) -> None:
+    def __init__(self, alpha: float = 0.9) -> None:
+        self.alpha = alpha
         super().__init__()
 
     def _get_target_weights(
         self, models_preds: np.ndarray, true_y: np.ndarray
     ) -> np.ndarray:
 
-        diffs = np.abs(models_preds) - true_y
-        weights = softmax(1 - diffs, axis=1)
+        diffs = np.abs(models_preds - true_y)
+        weights = softmax((1 - diffs) * self.alpha, axis=1)
 
         return weights
 
@@ -88,13 +92,12 @@ class OneHotWeighter(MixInTargetWeighter):
         return weights
 
 
-@deprecated
 class StaticGridWeighter(MixInStaticTargetWeighter):
 
     def __init__(
         self,
         method: SaticMethodTypes = "accuracy",
-        grid_points: int = 10,
+        precision: int = 25,
     ) -> None:
         super().__init__()
 
@@ -103,18 +106,15 @@ class StaticGridWeighter(MixInStaticTargetWeighter):
                 f"method should be from the {get_args(SaticMethodTypes)}, got {method} instead."
             )
 
-        self.metohd = method
-        self.grid_points = grid_points
+        self.method = method
+        self.precision = precision 
 
     def _find_best_weights(
         self, models_preds: np.ndarray, true_y: np.ndarray
     ) -> np.ndarray:
         n_models = models_preds.shape[1]
-
-        step_size = 1 / self.grid_points
-        grid_1d = np.arange(0, 1 + step_size, step_size)
-
-        grid_points = combinations(grid_1d, n_models)
+        
+        grid_points = self._get_grid_points(n_models, self.precision)
 
         max_score = 0
         best_weights = None
@@ -140,13 +140,30 @@ class StaticGridWeighter(MixInStaticTargetWeighter):
         y_pred = models_preds * weights
 
         if self.method == "accuracy":
-            res = np.mean((y_pred > 0.5).astype(int) == true_y)
+            res = np.mean((y_pred > 0.5).astype(int) == true_y.reshape((-1, 1)))
         if self.method == "difference":
-            res = 1 - np.mean(np.abs(y_pred - true_y))
+            res = 1 - np.mean(np.abs(y_pred - true_y.reshape((-1, 1))))
 
         return res
+    
+    def _get_grid_points(self, num_elements, precision, current_index=0, current_sum=0, current_combination=[]):
+
+        if current_index == num_elements:
+            if current_sum == precision:
+                return [current_combination]
+            return []
+
+        combinations = []
+        for value in range(precision + 1):
+            new_sum = current_sum + value
+            if new_sum <= precision:
+                new_combination = current_combination + [value / precision]
+                combinations.extend(self._get_grid_points(num_elements, precision, current_index + 1, new_sum, new_combination))
+
+        return combinations
 
 
+@deprecated
 class StaticLogisticWeighter(MixInStaticTargetWeighter):
 
     def __init__(self) -> None:
@@ -156,10 +173,9 @@ class StaticLogisticWeighter(MixInStaticTargetWeighter):
         self, models_preds: np.ndarray, true_y: np.ndarray
     ) -> np.ndarray:
 
-        linear_model = LogisticRegression()
+        linear_model = LogisticRegression(fit_intercept=False)
         linear_model.fit(models_preds, true_y.reshape(-1))
         weights = linear_model.coef_
-        weights = weights / weights.sum()
 
         return weights
 

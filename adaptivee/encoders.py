@@ -1,10 +1,20 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import pandas as pd
 import torch
+from liltab.data.dataloaders import ComposedDataLoader, FewShotDataLoader
+from liltab.data.datasets import PandasDataset
+from liltab.model.heterogenous_attributes_network import (
+    HeterogenousAttributesNetwork,
+)
+from liltab.train.trainer import (
+    HeterogenousAttributesNetworkTrainer,
+    LightningEncoderWrapper,
+)
 from torch import Tensor, nn
 from torch.utils.data import DataLoader, TensorDataset
 from torch.utils.tensorboard import SummaryWriter
@@ -114,7 +124,7 @@ class MLPEncoder(MixInDeepEncoder):
         self._encoder = nn.Sequential()
         self.encoder.train()
 
-    def _train(self, dataloader: DataLoader, n_iter: int = 10_000) -> None:
+    def _train(self, dataloader: DataLoader, n_iter: int = 1_000) -> None:
 
         if not self.adjusted:
             X_sample, y_sample = next(iter(dataloader))
@@ -124,7 +134,7 @@ class MLPEncoder(MixInDeepEncoder):
         running_loss = 0.0
         last_loss = 0.0
 
-        tb_writer = self._get_tb_writer("NLP")
+        tb_writer = self._get_tb_writer("MLP")
 
         loss_fn = nn.MSELoss()
         optimizer = torch.optim.Adam(self.encoder.parameters(), lr=0.0001)
@@ -167,6 +177,76 @@ class MLPEncoder(MixInDeepEncoder):
         self._encoder = nn.Sequential(
             first_layer, *layers, last_layer, nn.Softmax(dim=1)
         )
+
+
+class LiltabEncoder(MixInDeepEncoder):
+
+    def __init__(
+        self,
+        model: Optional[HeterogenousAttributesNetwork] = None,
+        model_path: Optional[str] = None,
+        adjusted: bool = False,
+    ) -> None:
+        super().__init__()
+
+        if not (model or model_path):
+            raise ValueError("model or model_path must be required.")
+        if model and model_path:
+            raise ValueError(
+                "model and model_path were passed but only one of them is required."
+            )
+
+        if model is not None:
+            self._encoder = model
+        if model_path is not None:
+            self._encoder = LightningEncoderWrapper.load_from_checkpoint(
+                model_path
+            ).model
+
+        self.encoder.forward = self.encoder.encode_features_set
+        self.adjusted = adjusted
+
+    def train(
+        self,
+        X: Tensor | np.ndarray | pd.DataFrame,
+        y: Tensor | np.ndarray | pd.DataFrame,
+        n_iter: int = 1000,
+    ) -> None:
+        X = pd.DataFrame(X)
+        X.rename(columns=lambda name: f"attr_{name}", inplace=True)
+        y = pd.DataFrame(y)
+        y.rename(columns=lambda name: f"target_{name}", inplace=True)
+
+        df = pd.concat([X, y], axis=1)
+        dataset = PandasDataset(
+            df, preprocess_data=False, response_regex="target_*"
+        )
+        dataloader = FewShotDataLoader(dataset, support_size=32, query_size=0)
+        composed_dataloader = ComposedDataLoader([dataloader])
+
+        self._train(composed_dataloader, n_iter)
+
+    def _train(self, dataloader: DataLoader, n_iter: int) -> None:
+
+        if not self.adjusted:
+
+            y_sample = next(iter(dataloader))[0][1][1]
+            self.encoder.change_head(y_sample.shape[1])
+            self.adjusted = True
+
+        trainer = HeterogenousAttributesNetworkTrainer(
+            n_epochs=n_iter,
+            gradient_clipping=False,
+            learning_rate=1e-3,
+            weight_decay=1e-4,
+            early_stopping_intervals=100,
+            file_logger=True,
+            tb_logger=True,
+            model_checkpoints=True,
+            results_path=Path("results"),
+        )
+
+        trainer.pretrain_adaptivee(self.encoder, train_loader=dataloader)
 
 
 class DummyEncoder(MixInEncoder):

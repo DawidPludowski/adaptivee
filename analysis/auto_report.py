@@ -14,21 +14,18 @@ from sklearn.metrics import (
     f1_score,
     roc_auc_score,
 )
-from sklearn.model_selection import train_test_split
 
 from analysis.ensembler import AdaptiveEnsembler
-
-# from analysis.metrics import accuracy as accuracy_score
-# from analysis.metrics import balanced_accuracy as balanced_accuracy_score
-# from analysis.metrics import f1 as f1_score
 
 
 class AutoReport:
 
     def __init__(
         self,
-        X: np.ndarray,
-        y: np.ndarray,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
+        X_test: np.ndarray,
+        y_test: np.ndarray,
         Models: list[type] = None,
         TargetWeighter: type = None,
         Encoder: type = None,
@@ -38,8 +35,10 @@ class AutoReport:
         report_name: str = None,
         data_name: str = None,
     ) -> None:
-        self.X = X
-        self.y = y
+        self.X_train = X_train
+        self.y_train = y_train
+        self.X_test = X_test
+        self.y_test = y_test
         self.models = [Model() for Model in Models]
         self.target_weighter = TargetWeighter()
         self.encoder = Encoder()
@@ -66,19 +65,19 @@ class AutoReport:
 
     def vizualize_data(self) -> None:
 
-        y = self.y
+        y = self.y_train
         if "data name" in self.meta_data.keys():
             title = self.meta_data["data_name"]
         else:
             title = "Data visualization"
 
-        if self.X.shape[1] > 2:
-            title += f" (PCA projection from {self.X.shape[1]} dims)"
+        if self.X_train.shape[1] > 2:
+            title += f" (PCA projection from {self.X_train.shape[1]} dims)"
 
             pca = PCA()
-            X = pca.fit_transform(self.X)
+            X = pca.fit_transform(self.X_train)
         else:
-            X = self.X
+            X = self.X_train
 
         plt.scatter(X[:, 0], X[:, 1], c=y)
         plt.title(title)
@@ -87,7 +86,12 @@ class AutoReport:
 
     def make_experiment(self) -> None:
 
-        X_train, y_train, X_test, y_test = self.__get_train_test_split()
+        X_train, y_train, X_test, y_test = (
+            self.X_train,
+            self.y_train,
+            self.X_test,
+            self.y_test,
+        )
         self.ensemble.create_adaptive_ensembler(X_train, y_train)
 
         self.__report_metrics(X_train, y_train, X_test, y_test)
@@ -105,14 +109,14 @@ class AutoReport:
         with open(self.root_dir / "meta_data.yaml", "w") as f:
             yaml.dump(meta, f)
 
-    def __get_train_test_split(
-        self, random_seed: int = 123, test_size: float = 0.3
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    # def __get_train_test_split(
+    #     self, random_seed: int = 123, test_size: float = 0.3
+    # ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            self.X, self.y, test_size=test_size, random_state=random_seed
-        )
-        return X_train, y_train, X_test, y_test
+    #     X_train, X_test, y_train, y_test = train_test_split(
+    #         self.X, self.y, test_size=test_size, random_state=random_seed
+    #     )
+    #     return X_train, y_train, X_test, y_test
 
     def __report_metrics(
         self,
@@ -125,19 +129,26 @@ class AutoReport:
         y_train_pred = self.ensemble.predict(X_train)
         y_test_pred = self.ensemble.predict(X_test)
 
+        y_train_pred_bin = (y_train_pred > 0.5).astype(int)
+        y_test_pred_bin = (y_test_pred > 0.5).astype(int)
+
         metrics = {
-            # 0: ["acc", "train", accuracy_score(y_train, y_train_pred)],
-            # 1: ["acc", "test", accuracy_score(y_test, y_test_pred)],
+            0: ["acc", "train", accuracy_score(y_train, y_train_pred_bin)],
+            1: ["acc", "test", accuracy_score(y_test, y_test_pred_bin)],
             2: ["roc-auc", "train", roc_auc_score(y_train, y_train_pred)],
             3: ["roc-auc", "test", roc_auc_score(y_test, y_test_pred)],
-            # 4: [
-            #     "acc-b",
-            #     "train",
-            #     balanced_accuracy_score(y_train, y_train_pred),
-            # ],
-            # 5: ["acc-b", "test", balanced_accuracy_score(y_test, y_test_pred)],
-            # 6: ["f1", "train", f1_score(y_train, y_train_pred)],
-            # 7: ["f1", "test", f1_score(y_test, y_test_pred)],
+            4: [
+                "acc-b",
+                "train",
+                balanced_accuracy_score(y_train, y_train_pred_bin),
+            ],
+            5: [
+                "acc-b",
+                "test",
+                balanced_accuracy_score(y_test, y_test_pred_bin),
+            ],
+            6: ["f1", "train", f1_score(y_train, y_train_pred_bin)],
+            7: ["f1", "test", f1_score(y_test, y_test_pred_bin)],
         }
 
         df = pd.DataFrame(data=metrics).T
@@ -258,12 +269,16 @@ class AutoSummaryReport:
 
         return metrics
 
+    def get_metrics(self):
+        return self.__get_metrics()
+
     def __make_rank_test(self, metrics: pd.DataFrame) -> None:
         warnings.warn("Rank test not implemented")
 
     def __summarize_metrics(self, metrics: pd.DataFrame) -> None:
 
         for metric_name in metrics["metric"].unique():
+
             g = sns.boxplot(
                 data=metrics[metrics["metric"] == metric_name],
                 x="experiment_name",

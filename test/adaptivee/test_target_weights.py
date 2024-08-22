@@ -13,7 +13,7 @@ def test_softmax_weighter_sum_to_1(true_y, models_pred):
     weighter = SoftMaxWeighter()
     weights = weighter.get_target_weights(models_pred, true_y)
 
-    assert all(weights.sum(axis=1) == 1)
+    assert all(np.abs(weights.sum(axis=1) - 1) < 1e-4)
 
 
 def test_softmax_weighter_best_highest(true_y, models_pred):
@@ -21,7 +21,8 @@ def test_softmax_weighter_best_highest(true_y, models_pred):
     weighter = SoftMaxWeighter()
     weights = weighter.get_target_weights(models_pred, true_y)
 
-    diffs = models_pred - true_y.reshape((-1, 1))
+    diffs = np.abs(models_pred - true_y.reshape((-1, 1)))
+
     best_pred = np.argmin(diffs, axis=1)
     highest_weights = np.argmax(weights, axis=1)
 
