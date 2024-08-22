@@ -272,6 +272,51 @@ class AutoSummaryReport:
     def get_metrics(self):
         return self.__get_metrics()
 
+    def get_weights(self):
+        return self.__get_weights()
+
+    def get_weights_metrics(self):
+        summary_dfs = []
+
+        dirs = self.root_dir.glob("*")
+        for dir_ in dirs:
+            weights_files = dir_.rglob("weights.csv")
+            for weight_file in weights_files:
+                data_name = weight_file.parent.parent.stem
+                experiment_name = weight_file.parent.stem
+
+                weights_summary = pd.read_csv(weight_file)
+
+                test_weights = (
+                    weights_summary[weights_summary["type"] == "test_weights"]
+                    .iloc[:, 1:-1]
+                    .to_numpy()
+                )
+                target_test_weights = (
+                    weights_summary[
+                        weights_summary["type"] == "target_test_weights"
+                    ]
+                    .iloc[:, 1:-1]
+                    .to_numpy()
+                )
+
+                diffs = test_weights - target_test_weights
+                norm_l2 = np.linalg.norm(diffs)
+                std = np.std(test_weights)
+
+                summary_df = pd.DataFrame(
+                    data={
+                        "data_name": [data_name],
+                        "experiment_name": [experiment_name],
+                        "norm": [norm_l2],
+                        "std": [std],
+                    }
+                )
+                summary_dfs.append(summary_df)
+
+        summary = pd.concat(summary_dfs)
+        return summary
+
     def __make_rank_test(self, metrics: pd.DataFrame) -> None:
         warnings.warn("Rank test not implemented")
 
@@ -294,7 +339,24 @@ class AutoSummaryReport:
             plt.clf()
 
     def __get_weights(self) -> pd.DataFrame:
-        pass
+
+        weights_dfs = []
+
+        dirs = self.root_dir.glob("*")
+        for dir_ in dirs:
+            weights_files = dir_.rglob("weights.csv")
+            for weight_file in weights_files:
+                data_name = weight_file.parent.parent.stem
+                experiment_name = weight_file.parent.stem
+
+                weights_summary = pd.read_csv(weight_file)
+                weights_summary["data_name"] = data_name
+                weights_summary["experiment_name"] = experiment_name
+
+                weights_dfs.append(weights_summary)
+
+        weights = pd.concat(weights_dfs)
+        return weights
 
     def __compare_weights_diversity(self, weights: pd.DataFrame) -> None:
         pass
