@@ -166,3 +166,17 @@ notebooks/*
 
 # torch logs
 tensorboard/*
+
+# analysis reports
+report/*
+
+# data & models
+resources/data/*
+resources/models/*
+
+# liltab-related logs
+lightning_logs/*
+results/*
+
+# slurm logs
+**/*.log
