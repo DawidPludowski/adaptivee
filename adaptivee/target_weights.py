@@ -165,12 +165,12 @@ class StaticGridWeighter(MixInStaticTargetWeighter):
                 return [current_combination]
             return []
 
-        combinations = []
+        combinations_ = []
         for value in range(precision + 1):
             new_sum = current_sum + value
             if new_sum <= precision:
                 new_combination = current_combination + [value / precision]
-                combinations.extend(
+                combinations_.extend(
                     self._get_grid_points(
                         num_elements,
                         precision,
@@ -180,7 +180,7 @@ class StaticGridWeighter(MixInStaticTargetWeighter):
                     )
                 )
 
-        return combinations
+        return combinations_
 
 
 @deprecated
