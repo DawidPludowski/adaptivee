@@ -180,3 +180,7 @@ results/*
 
 # slurm logs
 **/*.log
+
+# Autogluon models
+
+AutogluonModels/*
