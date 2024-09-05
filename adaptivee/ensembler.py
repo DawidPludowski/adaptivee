@@ -1,12 +1,12 @@
 import warnings
 from typing import Literal
 
-import autogluon
 import numpy as np
 import pandas as pd
 from autogluon.core.models.ensemble.weighted_ensemble_model import (
     WeightedEnsembleModel,
 )
+from autogluon.tabular import TabularPredictor
 
 from adaptivee.encoders import MixInEncoder
 from adaptivee.reweighting import MixInReweight, SimpleReweight
@@ -23,7 +23,7 @@ class AdaptiveEnsembler:
 
     def __init__(
         self,
-        models: list[any] | Literal["autogluon"],
+        models: list[any] | None,
         encoder: MixInEncoder,
         target_weighter: MixInTargetWeighter = SoftMaxWeighter(),
         reweighter: MixInReweight = SimpleReweight(),
@@ -31,14 +31,21 @@ class AdaptiveEnsembler:
         is_models_trained: bool = True,
         predict_fn: str = "predict_proba",
         train_fn: str = "fit",
-        autogluon_precision: str = None,
+        use_autogluon: bool = False,
+        autogluon_fit_kwargs: dict[str, any] = {
+            "num_stack_levels": 0,
+            "verbosity": 0,
+            "refit_full": True,
+            "num_bag_folds": 5,
+            "presets": "medium_quality",
+        },
     ) -> None:
         self.models = models
         self.encoder = encoder
         self.target_weighter = target_weighter
         self.reweighter = reweighter
 
-        if models != "autogluon" and not isinstance(
+        if use_autogluon and not isinstance(
             target_weighter, StaticFixedWeights
         ):
             if not isinstance(target_weighter, MixInStaticTargetWeighter):
@@ -50,6 +57,10 @@ class AdaptiveEnsembler:
                     f"autogluon models used but StaticFixedWeights not used. Autogluon's "
                     f"weights will override {type(target_weighter).__name__} weights."
                 )
+        if use_autogluon and models is not None:
+            warnings.warn(
+                "autogluon models used but custom models list provided. `models` argument will be ignored."
+            )
 
         if isinstance(target_weighter, MixInStaticTargetWeighter):
             warnings.warn(
@@ -60,19 +71,25 @@ class AdaptiveEnsembler:
         else:
             self.static_weighter = static_weighter
 
+        if not use_autogluon and models is None:
+            warnings.warn(
+                "models were not provided but `use_autogluon` is set to False."
+            )
+
         self.predict_fn = predict_fn
         self.train_fn = train_fn
 
         self.is_models_trained = is_models_trained
 
         self.static_weights = None
-        self.autogluon_precision = autogluon_precision
+        self.autogluon_fit_kwargs = autogluon_fit_kwargs
+        self.use_autogluon = use_autogluon
 
     def create_adaptive_ensembler(
         self, X: np.ndarray, y: np.ndarray, return_score: bool = False
     ) -> None:
 
-        if self.models is None:
+        if self.use_autogluon:
             self._train_autogluon_ensemble(X, y)
 
         if not self.is_models_trained:
@@ -97,6 +114,19 @@ class AdaptiveEnsembler:
 
         y_pred_final = np.sum(y_preds * final_weights, axis=1)
         return y_pred_final
+
+    def predict_static(self, X: np.ndarray) -> np.ndarray:
+        y_preds = self._get_models_preds(X)
+        final_weights = self.get_weights_static(X)
+
+        y_pred_final = np.sum(y_preds * final_weights, axis=1)
+        return y_pred_final
+
+    def get_weights_static(self, X: np.ndarray) -> np.ndarray:
+        reweights = self.static_weights.reshape(1, -1).repeat(
+            repeats=X.shape[0], axis=0
+        )
+        return reweights
 
     def get_weights(self, X: np.ndarray) -> np.ndarray:
         if isinstance(self.target_weighter, MixInStaticTargetWeighter):
@@ -136,7 +166,9 @@ class AdaptiveEnsembler:
 
         y_preds = []
         for model in self.models:
-            y_pred = model.predict_proba(X)[:, 1]
+            y_pred = model.predict_proba(X)
+            if not self.use_autogluon:
+                y_pred = y_pred[:, 1]
             y_preds.append(y_pred.reshape(-1, 1))
 
         y_preds = np.hstack(y_preds)
@@ -146,8 +178,8 @@ class AdaptiveEnsembler:
     def _train_autogluon_ensemble(self, X: np.ndarray, y: np.ndarray) -> None:
         models, weights = self.__get_autogluon_ensemble(X, y)
 
-        if isinstance(self.target_weighter, MixInStaticTargetWeighter):
-            self.target_weighter.weights = weights
+        weights = np.array(weights)
+        self.static_weighter.weights = weights
 
         self.models = models
         self.is_models_trained = True
@@ -158,40 +190,41 @@ class AdaptiveEnsembler:
         df = pd.DataFrame(X)
         df["class"] = y
 
-        if self.autogluon_precision is None:
-            self.autogluon_precision = "best_quality"
-
-        predictor = autogluon.TabularPredictor(label="class")
+        predictor = TabularPredictor(label="class")
 
         out_path = predictor.path
         warnings.warn(
             f"The AutoGluon output will be stored in {out_path} directory."
         )
 
-        predictor.fit(train_data=df, presets=self.autogluon_precision)
+        predictor.fit(train_data=df, **self.autogluon_fit_kwargs)
 
-        models_names = predictor.leadaderbord()["model"]
+        models_names = predictor.leaderboard()["model"]
 
-        for idx, model_name in models_names.iteritems():
+        if models_names.shape[0] == 1:
+            warnings.warn(
+                f"Autogluon ensemble consists of only one model - {models_names[0]}."
+            )
+
+        for idx, model_name in models_names.items():
             model = predictor._trainer.load_model(model_name)
             if isinstance(model, WeightedEnsembleModel):
                 if idx != 0:
                     warnings.warn(
-                        f"Autogluon's model is {idx}. best model from autogluon, not first."
+                        f"Autogluon's ensemble is {idx+1}. best model from autogluon, not first."
                     )
-                if len(model.models != 1):
+                if len(model.models) != 1:
                     warnings.warn(
                         "Autogluon returned multilayer stacking model; only first layer will be used by adaptivee."
                     )
 
                 first_layer = model.models[0]
                 weights = first_layer.weights_
-                weights = np.ndarray(weights)
 
                 models = []
                 for base_model_name in model.base_model_names:
                     base_model = predictor._trainer.load_model(base_model_name)
                     models.append(base_model)
 
-                assert weights.shape[0] == len(models)
+                assert len(weights) == len(models)
                 return models, weights

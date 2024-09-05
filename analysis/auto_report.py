@@ -15,6 +15,7 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
+from adaptivee.target_weights import StaticFixedWeights, StaticGridWeighter
 from analysis.ensembler import AdaptiveEnsembler
 
 
@@ -26,7 +27,7 @@ class AutoReport:
         y_train: np.ndarray,
         X_test: np.ndarray,
         y_test: np.ndarray,
-        Models: list[type] = None,
+        Models: list[type] | None = None,
         TargetWeighter: type = None,
         Encoder: type = None,
         Reweighter: type = None,
@@ -39,17 +40,29 @@ class AutoReport:
         self.y_train = y_train
         self.X_test = X_test
         self.y_test = y_test
-        self.models = [Model() for Model in Models]
+
+        if Models is not None:
+            self.models = [Model() for Model in Models]
+        else:
+            self.models = None
+
         self.target_weighter = TargetWeighter()
         self.encoder = Encoder()
         self.reweighter = Reweighter()
+        self.static_weighter = (
+            StaticFixedWeights(None)
+            if self.models is None
+            else StaticGridWeighter()
+        )
 
         self.ensemble = AdaptiveEnsembler(
             self.models,
             self.encoder,
             self.target_weighter,
             self.reweighter,
+            static_weighter=self.static_weighter,
             is_models_trained=False,
+            use_autogluon=True if self.models is None else False,
         )
 
         self.root_dir = Path(result_dir) / report_name
@@ -132,7 +145,7 @@ class AutoReport:
         y_train_pred_bin = (y_train_pred > 0.5).astype(int)
         y_test_pred_bin = (y_test_pred > 0.5).astype(int)
 
-        metrics = {
+        metrics_dynamic = {
             0: ["acc", "train", accuracy_score(y_train, y_train_pred_bin)],
             1: ["acc", "test", accuracy_score(y_test, y_test_pred_bin)],
             2: ["roc-auc", "train", roc_auc_score(y_train, y_train_pred)],
@@ -151,9 +164,42 @@ class AutoReport:
             7: ["f1", "test", f1_score(y_test, y_test_pred_bin)],
         }
 
-        df = pd.DataFrame(data=metrics).T
-        df.columns = ["metric", "data", "score"]
-        df.to_csv(self.root_dir / "metrics.csv", index=False)
+        df_dynamic = pd.DataFrame(data=metrics_dynamic).T
+        df_dynamic.columns = ["metric", "data", "score"]
+        df_dynamic["type"] = "dynamic"
+
+        y_train_pred = self.ensemble.predict_static(X_train)
+        y_test_pred = self.ensemble.predict_static(X_test)
+
+        y_train_pred_bin = (y_train_pred > 0.5).astype(int)
+        y_test_pred_bin = (y_test_pred > 0.5).astype(int)
+
+        metrics_static = {
+            0: ["acc", "train", accuracy_score(y_train, y_train_pred_bin)],
+            1: ["acc", "test", accuracy_score(y_test, y_test_pred_bin)],
+            2: ["roc-auc", "train", roc_auc_score(y_train, y_train_pred)],
+            3: ["roc-auc", "test", roc_auc_score(y_test, y_test_pred)],
+            4: [
+                "acc-b",
+                "train",
+                balanced_accuracy_score(y_train, y_train_pred_bin),
+            ],
+            5: [
+                "acc-b",
+                "test",
+                balanced_accuracy_score(y_test, y_test_pred_bin),
+            ],
+            6: ["f1", "train", f1_score(y_train, y_train_pred_bin)],
+            7: ["f1", "test", f1_score(y_test, y_test_pred_bin)],
+        }
+
+        df_static = pd.DataFrame(data=metrics_static).T
+        df_static.columns = ["metric", "data", "score"]
+        df_static["type"] = "static"
+
+        pd.concat([df_dynamic, df_static], ignore_index=True, axis=0).to_csv(
+            self.root_dir / "metrics.csv", index=False
+        )
 
     def __report_weights(
         self,
