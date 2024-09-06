@@ -35,9 +35,8 @@ class AdaptiveEnsembler:
         autogluon_fit_kwargs: dict[str, any] = {
             "num_stack_levels": 0,
             "verbosity": 0,
-            "refit_full": True,
-            "num_bag_folds": 5,
-            "presets": "medium_quality",
+            "presets": "best_quality",
+            "time_limit": 5 * 60,
         },
     ) -> None:
         self.models = models
