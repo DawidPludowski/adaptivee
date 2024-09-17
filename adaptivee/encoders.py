@@ -210,7 +210,7 @@ class LiltabEncoder(MixInDeepEncoder):
         self,
         X: Tensor | np.ndarray | pd.DataFrame,
         y: Tensor | np.ndarray | pd.DataFrame,
-        n_iter: int = 1000,
+        n_iter: int = 200,
     ) -> None:
         X = pd.DataFrame(X)
         X.rename(columns=lambda name: f"attr_{name}", inplace=True)

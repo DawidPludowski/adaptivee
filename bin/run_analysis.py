@@ -8,14 +8,20 @@ from adaptivee.encoders import DummyEncoder
 from adaptivee.reweighting import SimpleReweight
 from analysis.auto_report import AutoReport, AutoSummaryReport
 from analysis.configs import REWEIGHTERS  # DATASETS,
-from analysis.configs import (ENCODERS, MODELS, STATIC_TARGET_WEIGHTERS,
-                              TARGET_WEIGHTERS)
+from analysis.configs import (
+    ENCODERS,
+    MODELS,
+    STATIC_TARGET_WEIGHTERS,
+    TARGET_WEIGHTERS,
+)
 from analysis.data.openml import get_data
 
 
 def __get_class_name(obj: any) -> str:
     if isinstance(obj, partial):
-        cls_name = obj.__getattribute__("func").__name__
+        args_str = [key + "=" + str(item) for key, item in obj.args.items()]
+        args_str = ",".join(args_str)
+        cls_name = f"{obj.__getattribute__('func').__name__}_{obj.args}"
     elif isinstance(obj, type):
         cls_name = obj.__name__
     else:

@@ -11,6 +11,15 @@ class AdaptiveEnsembler(Adaptivee):
         self, X: np.ndarray, y: np.ndarray, return_score: bool = False
     ) -> None:
 
+        if self.models is None:
+            logger.info("Create models with AutoGluon...")
+            self._train_autogluon_ensemble(X, y)
+            n_models = len(self.models)
+            if n_models < 2:
+                logger.warning(f"Number of models: {n_models}")
+            else:
+                logger.info(f"Number of models: {n_models}")
+
         if not self.is_models_trained:
             logger.info("Model training...")
             self._train_models(X, y)
