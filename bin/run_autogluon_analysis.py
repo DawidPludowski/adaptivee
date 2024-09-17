@@ -6,7 +6,7 @@ from loguru import logger
 
 from adaptivee.encoders import LiltabEncoder
 from adaptivee.reweighting import DirectionReweight
-from adaptivee.target_weights import SoftMaxWeighter
+from adaptivee.target_weights import OneHotWeighter, SoftMaxWeighter
 from analysis.auto_report import AutoReport, AutoSummaryReport
 from analysis.data.openml import get_data
 
@@ -44,8 +44,8 @@ def main() -> None:
         encoder = partial(
             LiltabEncoder, model_path="resources/models/final_model.ckpt"
         )
-        reweighter = partial(DirectionReweight, step_size=0.5)
-        target_weighter = SoftMaxWeighter
+        reweighter = partial(DirectionReweight, step_size=0.1)
+        target_weighter = OneHotWeighter
 
         report = AutoReport(
             X_train,
