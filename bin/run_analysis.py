@@ -19,9 +19,7 @@ from analysis.data.openml import get_data
 
 def __get_class_name(obj: any) -> str:
     if isinstance(obj, partial):
-        args_str = [key + "=" + str(item) for key, item in obj.args.items()]
-        args_str = ",".join(args_str)
-        cls_name = f"{obj.__getattribute__('func').__name__}_{obj.args}"
+        cls_name = f"{obj.__getattribute__('func').__name__}"
     elif isinstance(obj, type):
         cls_name = obj.__name__
     else:

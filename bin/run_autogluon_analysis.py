@@ -42,10 +42,10 @@ def main() -> None:
         logger.info(f"Start data: {data_name}")
 
         encoder = partial(
-            LiltabEncoder, model_path="resources/models/final_model.ckpt"
+            LiltabEncoder, model_path="resources/models/full_model.ckpt"
         )
         reweighter = partial(DirectionReweight, step_size=0.1)
-        target_weighter = OneHotWeighter
+        target_weighter = SoftMaxWeighter
 
         report = AutoReport(
             X_train,
