@@ -23,9 +23,9 @@ pip install -r requirements-dev.txt
 export PYTHONPATH=`pwd`
 
 python bin/download_openml_data.py
-python bin/prepare_liltab_data.py
 python bin/pretrain_encoder.py
 python bin/run_analysis.py # path to the liltab model should be updated
+python bin/run_autogluon_analysis.py # path to the liltab model should be updated
 ```
 
 The results are saved in `report` directory. all visualization was made using notebooks from `explore` directory.
