@@ -4,6 +4,8 @@ This repository is the official implementation of Adaptivee: Adaptive Ensemble f
 
 ## Experiments reproduction
 
+All epxeriments were made on Linux (Ubuntu) environment. There is no guarantee that the code is executable using different OS.
+
 ```{bash}
 #!/bin/bash
 
