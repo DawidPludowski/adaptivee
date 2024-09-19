@@ -1,6 +1,6 @@
-# Adaptivee
+# Adaptivee: Adaptive Ensemble for Tabular Data
 
-Adaptivee is an adaptive ensembler framework that assign models weights for each observation separately.
+This repository is the official implementation of Adaptivee: Adaptive Ensemble for Tabular Data.
 
 ## Experiments reproduction
 
@@ -25,6 +25,8 @@ python bin/prepare_liltab_data.py
 python bin/pretrain_encoder.py
 python bin/run_analysis.py # path to the liltab model should be updated
 ```
+
+The results are saved in `report` directory. all visualization was made using notebooks from `explore` directory.
 
 ## Example of usage
 
