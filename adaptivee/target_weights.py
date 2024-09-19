@@ -4,6 +4,9 @@ from typing import Literal, get_args
 
 import numpy as np
 import pandas as pd
+from autogluon.core.models.ensemble.weighted_ensemble_model import (
+    WeightedEnsembleModel,
+)
 from scipy.special import softmax
 from sklearn.linear_model import LogisticRegression
 
@@ -20,10 +23,10 @@ class MixInTargetWeighter(ABC):
     def get_target_weights(
         self, models_preds: np.ndarray, true_y: np.ndarray | pd.Series
     ) -> np.ndarray:
-        
+
         if isinstance(true_y, pd.Series):
             true_y = true_y.to_numpy()
-        
+
         true_y = true_y.reshape((-1, 1))
         weights = self._get_target_weights(models_preds, true_y)
 
@@ -107,13 +110,13 @@ class StaticGridWeighter(MixInStaticTargetWeighter):
             )
 
         self.method = method
-        self.precision = precision 
+        self.precision = precision
 
     def _find_best_weights(
         self, models_preds: np.ndarray, true_y: np.ndarray
     ) -> np.ndarray:
         n_models = models_preds.shape[1]
-        
+
         grid_points = self._get_grid_points(n_models, self.precision)
 
         max_score = 0
@@ -140,27 +143,44 @@ class StaticGridWeighter(MixInStaticTargetWeighter):
         y_pred = models_preds * weights
 
         if self.method == "accuracy":
-            res = np.mean((y_pred > 0.5).astype(int) == true_y.reshape((-1, 1)))
+            res = np.mean(
+                (y_pred > 0.5).astype(int) == true_y.reshape((-1, 1))
+            )
         if self.method == "difference":
             res = 1 - np.mean(np.abs(y_pred - true_y.reshape((-1, 1))))
 
         return res
-    
-    def _get_grid_points(self, num_elements, precision, current_index=0, current_sum=0, current_combination=[]):
+
+    def _get_grid_points(
+        self,
+        num_elements,
+        precision,
+        current_index=0,
+        current_sum=0,
+        current_combination=[],
+    ):
 
         if current_index == num_elements:
             if current_sum == precision:
                 return [current_combination]
             return []
 
-        combinations = []
+        combinations_ = []
         for value in range(precision + 1):
             new_sum = current_sum + value
             if new_sum <= precision:
                 new_combination = current_combination + [value / precision]
-                combinations.extend(self._get_grid_points(num_elements, precision, current_index + 1, new_sum, new_combination))
+                combinations_.extend(
+                    self._get_grid_points(
+                        num_elements,
+                        precision,
+                        current_index + 1,
+                        new_sum,
+                        new_combination,
+                    )
+                )
 
-        return combinations
+        return combinations_
 
 
 @deprecated
@@ -189,3 +209,15 @@ class StaticEqualWeighter(MixInStaticTargetWeighter):
         weights = np.ones(shape=(p)) / p
 
         return weights
+
+
+class StaticFixedWeights(MixInStaticTargetWeighter):
+
+    def __init__(self, weights: np.ndarray) -> None:
+        super().__init__()
+        self.weights = weights
+
+    def _find_best_weights(
+        self, models_preds: np.ndarray, true_y: np.ndarray
+    ) -> np.ndarray:
+        return self.weights

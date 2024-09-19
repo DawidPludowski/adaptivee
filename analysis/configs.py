@@ -10,16 +10,29 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
 from adaptivee.encoders import LiltabEncoder, MixInEncoder, MLPEncoder
-from adaptivee.reweighting import (DirectionReweight, MixInReweight,
-                                   SimpleReweight)
-from adaptivee.target_weights import (MixInStaticTargetWeighter,
-                                      MixInTargetWeighter, OneHotWeighter,
-                                      SoftMaxWeighter, StaticEqualWeighter,
-                                      StaticGridWeighter,
-                                      StaticLogisticWeighter)
-from analysis.data import (blur_data, change_position, create_circles,
-                           create_cubes, create_linear,
-                           create_normal_distribution, mix_data)
+from adaptivee.reweighting import (
+    DirectionReweight,
+    MixInReweight,
+    SimpleReweight,
+)
+from adaptivee.target_weights import (
+    MixInStaticTargetWeighter,
+    MixInTargetWeighter,
+    OneHotWeighter,
+    SoftMaxWeighter,
+    StaticEqualWeighter,
+    StaticGridWeighter,
+    StaticLogisticWeighter,
+)
+from analysis.data import (
+    blur_data,
+    change_position,
+    create_circles,
+    create_cubes,
+    create_linear,
+    create_normal_distribution,
+    mix_data,
+)
 
 DATASETS: list[tuple[str, tuple[np.ndarray, np.ndarray]]] = [
     (
@@ -57,7 +70,7 @@ MODELS: list[tuple[any]] = [
 ]
 
 ENCODERS: list[MixInEncoder] = [
-    partial(LiltabEncoder, model_path="resources/models/final_model.ckpt"),
+    partial(LiltabEncoder, model_path="resources/models/full_model.ckpt"),
     partial(MLPEncoder, [100, 100]),
 ]
 REWEIGHTERS: list[MixInReweight] = [SimpleReweight, DirectionReweight]
@@ -67,7 +80,7 @@ TARGET_WEIGHTERS: list[MixInTargetWeighter] = [
 ]
 
 STATIC_TARGET_WEIGHTERS: list[MixInStaticTargetWeighter] = [
-    StaticLogisticWeighter,
+    # StaticLogisticWeighter,
     StaticEqualWeighter,
-    StaticGridWeighter
+    StaticGridWeighter,
 ]
