@@ -3,15 +3,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from loguru import logger
-from tqdm import tqdm
 
 from adaptivee.encoders import DummyEncoder
 from adaptivee.ensembler import AdaptiveEnsembler
-from adaptivee.target_weights import (
-    MixInStaticTargetWeighter,
-    OneHotWeighter,
-    SoftMaxWeighter,
-)
+from adaptivee.target_weights import MixInStaticTargetWeighter
 from analysis.configs import MODELS, TARGET_WEIGHTERS
 
 
@@ -28,17 +23,14 @@ def process_for_weighter(
     dst_path: str,
     data_name: str,
 ) -> None:
-    models = _get_model()
     (Path(dst_path) / f"{weighter_name}").mkdir(exist_ok=True, parents=True)
 
-    for model in models:
-        model.fit(X, y)
-
     ensembler = AdaptiveEnsembler(
-        models=models,
+        models=None,
         target_weighter=target_weighter,
         encoder=DummyEncoder(),
         is_models_trained=True,
+        use_autogluon=True
     )
     ensembler.create_adaptive_ensembler(X.to_numpy(), y.to_numpy())
 
@@ -57,8 +49,8 @@ def process_for_weighter(
 
 
 def main(
-    source_path: str = "resources/data/openml/encoder",
-    dst_path: str = "resources/data/openml/encoder-mod",
+    source_path: str = Path("resources/data/openml/encoder"),
+    dst_path: str = Path("resources/data/openml/encoder-mod"),
 ) -> None:
 
     cnt = 0
