@@ -112,18 +112,27 @@ def filter_tasks(
 
 
 def create_split(
-    data: pd.DataFrame, target_feature: str, seed: int
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+    data: pd.DataFrame, target_feature: str, seed: int, train_ratio: float = 0.6, val_ratio: float = 0.2
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     colnames = data.columns
 
     df_train, df_test = train_test_split(
-        data, stratify=data[target_feature], shuffle=True, random_state=seed
+        data, stratify=data[target_feature], shuffle=True, random_state=seed,
+        train_size=(train_ratio + val_ratio)
     )
     df_train = pd.DataFrame(data=df_train, columns=colnames)
     df_test = pd.DataFrame(data=df_test, columns=colnames)
+    
+    df_train, df_val = train_test_split(
+        df_train, stratify=df_train[target_feature], shuffle=True, random_state=seed,
+        train_size=(train_ratio / (train_ratio + val_ratio))
+    )
+    
+    df_train = pd.DataFrame(data=df_train, columns=colnames)
+    df_val = pd.DataFrame(data=df_val, columns=colnames)
 
-    return df_train, df_test
+    return df_train, df_val, df_test
 
 
 def download_tasks(
@@ -135,11 +144,12 @@ def download_tasks(
 ) -> None:
 
     download_dst = Path(download_dst)
-    download_dst.mkdir(exist_ok=True)
+    download_dst.mkdir(exist_ok=True, parents=True)
 
-    (download_dst / "train").mkdir(exist_ok=True)
-    (download_dst / "test").mkdir(exist_ok=True)
-    (download_dst / "encoder").mkdir(exist_ok=True)
+    (download_dst / "train").mkdir(exist_ok=True, parents=True)
+    (download_dst / "val").mkdir(exist_ok=True, parents=True)
+    (download_dst / "test").mkdir(exist_ok=True, parents=True)
+    (download_dst / "encoder").mkdir(exist_ok=True, parents=True)
 
     if shuffle:
         random.seed(seed)
@@ -167,9 +177,6 @@ def download_tasks(
         data = dataset.get_data()[0]
 
         data_size = data.memory_usage(index=True).sum() / 1024 // 1024
-        if data_size > 10:
-            logger.warning(f"Dataset skipped due to its size: {data_size} MB")
-            continue
 
         n_classes = np.unique(data[target_name]).shape[0]
         if n_classes != 2:
@@ -180,30 +187,53 @@ def download_tasks(
 
         data = _ensure_last_target(data, target_name)
 
-        X, y = data.iloc[:, :-1], data.iloc[:, -1]
-
-        pipeline = _get_generic_preprocessing()
-        X = pipeline.fit_transform(X)
-
-        y = LabelEncoder().fit_transform(pd.DataFrame(y))
-
-        df = pd.DataFrame(data=X)
-        df["target"] = y
-
         if downloaded_cnt < 20:
 
-            df_train, df_test = create_split(
-                df, target_feature="target", seed=seed
+            df_train, df_val, df_test = create_split(
+                data, target_feature=target_name, seed=seed
             )
+            
+            pipeline = _get_generic_preprocessing()
+            encoder = LabelEncoder()
+            
+            X_train = pipeline.fit_transform(df_train.iloc[:,:-1])
+            y_train = encoder.fit_transform(df_train.iloc[:,-1])
+            
+            df_train = pd.DataFrame(data=X_train)
+            df_train['target'] = y_train
+            
+            X_val = pipeline.transform(df_val.iloc[:,:-1])
+            y_val = encoder.transform(df_val.iloc[:,-1])
+            
+            df_val = pd.DataFrame(data=X_val)
+            df_val['target'] = y_val
+            
+            X_test = pipeline.transform(df_test.iloc[:,:-1])
+            y_test = encoder.transform(df_test.iloc[:,-1])
+            
+            df_test = pd.DataFrame(data=X_test)
+            df_test['target'] = y_test
 
             df_train.to_csv(
                 download_dst / "train" / f"{task_name}.csv", index=False
+            )
+            df_val.to_csv(
+                download_dst / 'val' / f"{task_name}.csv", index=False
             )
             df_test.to_csv(
                 download_dst / "test" / f"{task_name}.csv", index=False
             )
 
         else:
+            
+            pipeline = _get_generic_preprocessing()
+            encoder = LabelEncoder()
+            
+            X = pipeline.fit_transform(data.iloc[:,:-1])
+            y = encoder.fit_transform(data.iloc[:,-1])
+
+            df = pd.DataFrame(data=X)
+            df['target'] = y
 
             df.to_csv(
                 download_dst / "encoder" / f"{task_name}.csv", index=False
@@ -224,9 +254,6 @@ def main(download_dst="resources/data/openml", seed: int = 100) -> None:
 
     logger.info("Searching for CC18 AutoML tasks...")
     tasks_ = get_tasks()
-
-    # logger.info("Filtering out tasks...")
-    # tasks_ = filter_tasks(tasks_, ADDITIONAL_CONDITIONS)
 
     logger.info(f"Downloading data to location: {download_dst} ...")
     download_tasks(tasks_, download_dst, seed=seed)
