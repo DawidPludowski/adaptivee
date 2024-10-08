@@ -28,11 +28,15 @@ def main() -> None:
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    for df_train, df_test, data_name in get_data("resources/data/openml"):
+    for df_train, df_val, df_test, data_name in get_data("resources/data/openml"):
 
         X_train, y_train = (
             df_train.iloc[:, :-1],
             df_train.iloc[:, -1],
+        )
+        X_val, y_val = (
+            df_val.iloc[:, :-1],
+            df_val.iloc[:, -1]
         )
         X_test, y_test = (
             df_test.iloc[:, :-1],
@@ -50,6 +54,8 @@ def main() -> None:
         report = AutoReport(
             X_train,
             y_train,
+            X_val,
+            y_val,
             X_test,
             y_test,
             Models=None,

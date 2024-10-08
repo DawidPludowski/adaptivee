@@ -111,7 +111,7 @@ class AutoReport:
             self.X_test,
             self.y_test,
         )
-        self.ensemble.create_adaptive_ensembler(X_train, y_train)
+        self.ensemble.create_adaptive_ensembler(X_train, y_train, X_val, y_val)
 
         self.__report_metrics(X_train, y_train, X_test, y_test)
         self.__report_weights(X_train, y_train, X_test, y_test)

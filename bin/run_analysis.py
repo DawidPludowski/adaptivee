@@ -34,11 +34,15 @@ def main() -> None:
 
     logger.info("STATIC APPROACHES")
 
-    for df_train, df_test, data_name in get_data("resources/data/openml"):
+    for df_train, df_test, df_val, data_name in get_data("resources/data/openml"):
 
         X_train, y_train = (
             df_train.iloc[:, :-1].to_numpy(),
             df_train.iloc[:, -1].to_numpy(),
+        )
+        X_val, y_val = (
+            df_val.iloc[:, :-1].to_numpy(),
+            df_val.iloc[:, -1].tp_numpy()
         )
         X_test, y_test = (
             df_test.iloc[:, :-1].to_numpy(),
@@ -60,6 +64,8 @@ def main() -> None:
             report = AutoReport(
                 X_train,
                 y_train,
+                X_val,
+                y_val,
                 X_test,
                 y_test,
                 models,
