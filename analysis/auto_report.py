@@ -79,11 +79,13 @@ class AutoReport:
         self.vizualize_data()
         self.make_experiment()
         self.put_meta_data()
+                
+        
 
     def vizualize_data(self) -> None:
 
         y = self.y_train
-        if "data name" in self.meta_data.keys():
+        if "data_name" in self.meta_data.keys():
             title = self.meta_data["data_name"]
         else:
             title = "Data visualization"
@@ -123,6 +125,7 @@ class AutoReport:
             "encoder": type(self.encoder).__name__,
             "reweighter": type(self.reweighter).__name__,
             "meta_data": self.meta_data,
+            "reweighter_stepsize": self.reweighter.step_size
         }
 
         with open(self.root_dir / "meta_data.yaml", "w") as f:
