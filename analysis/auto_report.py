@@ -25,6 +25,8 @@ class AutoReport:
         self,
         X_train: np.ndarray,
         y_train: np.ndarray,
+        X_val: np.ndarray,
+        y_val: np.ndarray,
         X_test: np.ndarray,
         y_test: np.ndarray,
         Models: list[type] | None = None,
@@ -38,6 +40,8 @@ class AutoReport:
     ) -> None:
         self.X_train = X_train
         self.y_train = y_train
+        self.X_val = X_val
+        self.y_val = y_val
         self.X_test = X_test
         self.y_test = y_test
 
@@ -99,9 +103,11 @@ class AutoReport:
 
     def make_experiment(self) -> None:
 
-        X_train, y_train, X_test, y_test = (
+        X_train, y_train, X_val, y_val, X_test, y_test = (
             self.X_train,
             self.y_train,
+            self.X_val,
+            self.y_val,
             self.X_test,
             self.y_test,
         )
