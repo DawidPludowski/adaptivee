@@ -17,6 +17,7 @@ from sklearn.metrics import (
 
 from adaptivee.target_weights import StaticFixedWeights, StaticGridWeighter
 from analysis.ensembler import AdaptiveEnsembler
+from adaptivee.reweighting import DirectionReweight
 
 
 class AutoReport:
@@ -120,13 +121,26 @@ class AutoReport:
 
     def put_meta_data(self) -> None:
         meta = {
-            "data_name": self.data_name,
+            "data": {
+                "data_name": self.data_name,
+                "train_size": self.X_train.shape[0],
+                "val_size": self.X_val.shape[0],
+                "test_size": self.X_test.shape[0],
+                "train_y_ratio": float((self.y_train == 1).mean()),
+                "n_features": self.X_train.shape[1]
+            },
+            "reweighter": {
+                "name": type(self.reweighter).__name__,
+            },
+            "data_name": self.data_name, # legacy
             "target_weighter": type(self.target_weighter).__name__,
             "encoder": type(self.encoder).__name__,
-            "reweighter": type(self.reweighter).__name__,
+            "reweighter": type(self.reweighter).__name__, # legacy
             "meta_data": self.meta_data,
-            "reweighter_stepsize": self.reweighter.step_size
         }
+        
+        if isinstance(self.reweighter, DirectionReweight):
+            meta['reweighter']['step_size'] = self.reweighter.step_size,
 
         with open(self.root_dir / "meta_data.yaml", "w") as f:
             yaml.dump(meta, f)
