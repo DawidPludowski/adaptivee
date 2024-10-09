@@ -219,8 +219,22 @@ class AutoReport:
         df_static = pd.DataFrame(data=metrics_static).T
         df_static.columns = ["metric", "data", "score"]
         df_static["type"] = "static"
+        
+        metric_bounds = {
+            1: ["acc", "test", self.__get_metric_bounds(accuracy_score, is_prob=True)],
+            3: ["roc-auc", "test", self.__get_metric_bounds(roc_auc_score, is_prob=False)],
+            5: [
+                "acc-b",
+                "test",
+                self.__get_metric_bounds(balanced_accuracy_score, is_prob=False),
+            ],
+            7: ["f1", "test", self.__get_metric_bounds(f1_score, is_prob=False)],
+        }
+        df_bounds = pd.DataFrame(data=metric_bounds).T
+        df_bounds.columns = ['metric', 'data', 'score']
+        df_bounds['type'] = 'bounds'
 
-        pd.concat([df_dynamic, df_static], ignore_index=True, axis=0).to_csv(
+        pd.concat([df_dynamic, df_static, df_bounds], ignore_index=True, axis=0).to_csv(
             self.root_dir / "metrics.csv", index=False
         )
 
@@ -299,6 +313,30 @@ class AutoReport:
 
         plt.savefig(f"{self.root_dir}/weights_diff.png")
         plt.clf()
+        
+    def __get_metric_bounds(self,
+                          metric: callable,
+                          is_prob: bool = False) -> float:
+        
+        X_test, y_test = self.X_test, self.y_test
+        
+        # dynamic
+        y_pred = self.ensemble.predict(X_test).reshape(-1, 1)
+        diff = np.abs(y_test - y_pred)
+        
+        best_pred_idx = np.argmax(diff, axis=1)
+        best_pred = y_pred[np.arange(y_pred.shape[0]), best_pred_idx]
+        
+        # static
+        static_pred = self.ensemble.predict_static(X_test)
+        
+        if not is_prob:
+            best_pred = (0.5 < best_pred).astype(int)
+            static_pred = (0.5 < best_pred).astype(int)    
+            
+        metric_worst, metric_best = metric(y_test, static_pred), metric(y_test, best_pred)
+        
+        return metric_worst, metric_best
 
 
 class AutoSummaryReport:
