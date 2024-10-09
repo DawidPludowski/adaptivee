@@ -256,6 +256,9 @@ class AutoReport:
         target_test_weights = self.target_weighter.get_target_weights(
             y_test_preds_all, y_test
         )
+        
+        static_train_weights = self.static_weighter.get_target_weights(y_train_preds_all, y_train)
+        static_test_weights = self.static_weighter.get_target_weights(y_test_preds_all, y_test)
 
         # csv
 
@@ -274,6 +277,15 @@ class AutoReport:
         target_test_weights_df = pd.DataFrame(data=target_test_weights)
         target_test_weights_df["type"] = "target_test_weights"
         target_test_weights_df.reset_index(drop=False, inplace=True)
+        
+        static_train_weights_df = pd.DataFrame(data=static_train_weights)
+        static_train_weights_df['type'] = 'static_train_weights'
+        static_train_weights_df.reset_index(drop=False, inplace=True)
+        
+        static_test_weights_df = pd.DataFrame(data=static_test_weights)
+        static_test_weights_df['type'] = 'static_test_weights'
+        static_test_weights_df.reset_index(drop=False, inplace=True)
+        
 
         df = pd.concat(
             [
@@ -281,6 +293,8 @@ class AutoReport:
                 test_weights_df,
                 target_train_weights_df,
                 target_test_weights_df,
+                static_train_weights_df,
+                static_test_weights_df
             ]
         )
 
