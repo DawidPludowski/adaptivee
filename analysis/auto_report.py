@@ -139,13 +139,37 @@ class AutoReport:
             },
             "encoder": type(self.encoder).__name__,
             "meta_data": self.meta_data,
+            "models": {
+                "n": len(self.ensemble.models),
+                "weights": self.ensemble.static_weights.tolist(),
+                "names": [
+                    type(model_name).__name__
+                    for model_name in self.ensemble.models
+                ],
+            },
         }
 
         if isinstance(self.reweighter, DirectionReweight):
-            meta["reweighter"]["step_size"] = (self.reweighter.step_size,)
+            meta["reweighter"]["step_size"] = float(self.reweighter.step_size)
+
+            X_test, y_test = self.X_test, self.y_test
+            y_pred = self.ensemble._get_models_preds(X_test)
+            static_weights = self.ensemble.get_weights_static(X_test)
+            encoder_weights = self.encoder.predict(X_test)
+            self.reweighter.optimize_hp(
+                y_true=y_test,
+                y_pred=y_pred,
+                static_weights=static_weights,
+                encoder_weights=encoder_weights,
+            )
+            meta["reweighter"]["step_size_test_optim"] = float(
+                self.reweighter.step_size
+            )
 
         if isinstance(self.target_weighter, SoftMaxWeighter):
-            meta["target_weighter"]["alpha"] = self.target_weighter.alpha
+            meta["target_weighter"]["alpha"] = float(
+                self.target_weighter.alpha
+            )
 
         with open(self.root_dir / "meta_data.yaml", "w") as f:
             yaml.dump(meta, f)
@@ -229,12 +253,12 @@ class AutoReport:
             1: [
                 "acc",
                 "test",
-                self.__get_metric_bounds(accuracy_score, is_prob=True),
+                self.__get_metric_bounds(accuracy_score, is_prob=False),
             ],
             3: [
                 "roc-auc",
                 "test",
-                self.__get_metric_bounds(roc_auc_score, is_prob=False),
+                self.__get_metric_bounds(roc_auc_score, is_prob=True),
             ],
             5: [
                 "acc-b",
@@ -251,7 +275,7 @@ class AutoReport:
         }
         df_bounds = pd.DataFrame(data=metric_bounds).T
         df_bounds.columns = ["metric", "data", "score"]
-        df_bounds["type"] = "bounds"
+        df_bounds["type"] = "upper_bound"
 
         pd.concat(
             [df_dynamic, df_static, df_bounds], ignore_index=True, axis=0
@@ -356,25 +380,24 @@ class AutoReport:
 
         X_test, y_test = self.X_test, self.y_test
 
+        if isinstance(y_test, pd.Series):
+            y_test = y_test.to_numpy()
+
+        y_test = y_test.reshape(-1, 1)
+
         # dynamic
-        y_pred = self.ensemble.predict(X_test).reshape(-1, 1)
+        y_pred = self.ensemble._get_models_preds(X_test)
         diff = np.abs(y_test - y_pred)
 
-        best_pred_idx = np.argmax(diff, axis=1)
+        best_pred_idx = np.argmin(diff, axis=1)
         best_pred = y_pred[np.arange(y_pred.shape[0]), best_pred_idx]
-
-        # static
-        static_pred = self.ensemble.predict_static(X_test)
 
         if not is_prob:
             best_pred = (0.5 < best_pred).astype(int)
-            static_pred = (0.5 < best_pred).astype(int)
 
-        metric_worst, metric_best = metric(y_test, static_pred), metric(
-            y_test, best_pred
-        )
+        metric_best = metric(y_test, best_pred)
 
-        return metric_worst, metric_best
+        return metric_best
 
 
 class AutoSummaryReport:

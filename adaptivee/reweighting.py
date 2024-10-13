@@ -3,6 +3,7 @@ from copy import deepcopy
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 from scipy.optimize import minimize_scalar
 from torch import Tensor
 
@@ -77,12 +78,15 @@ class DirectionReweight(MixInReweight):
 
     def optimize_hp(self, y_true, y_pred, static_weights, encoder_weights):
 
+        if isinstance(y_true, pd.Series):
+            y_true = y_true.to_numpy()
+
         fun = lambda alpha: np.mean(
             (
-                y_true
+                y_true.reshape((-1, 1))
                 - (
                     y_pred
-                    @ (
+                    * (
                         static_weights
                         + (encoder_weights - static_weights) * alpha
                     )

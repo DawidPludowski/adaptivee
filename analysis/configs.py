@@ -73,12 +73,12 @@ ENCODERS: list[MixInEncoder] = [
     partial(LiltabEncoder, model_path="resources/models/full_model.ckpt"),
     partial(MLPEncoder, [100, 100]),
 ]
-REWEIGHTERS: list[MixInReweight] = [SimpleReweight, DirectionReweight]
+REWEIGHTERS: list[MixInReweight] = [DirectionReweight, SimpleReweight]
 TARGET_WEIGHTERS: list[MixInTargetWeighter] = [
     # OneHotWeighter,
-    # partial(SoftMaxWeighter, alpha=1),
-    partial(SoftMaxWeighter, alpha=2),
-    partial(SoftMaxWeighter, alpha=0.5),
+    partial(SoftMaxWeighter, alpha=0.9),
+    # partial(SoftMaxWeighter, alpha=2),
+    # partial(SoftMaxWeighter, alpha=0.5),
 ]
 
 STATIC_TARGET_WEIGHTERS: list[MixInStaticTargetWeighter] = [

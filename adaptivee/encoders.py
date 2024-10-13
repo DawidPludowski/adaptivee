@@ -244,6 +244,7 @@ class LiltabEncoder(MixInDeepEncoder):
             tb_logger=True,
             model_checkpoints=True,
             results_path=Path("results"),
+            y_size=y_sample.shape[1],
         )
 
         trainer.pretrain_adaptivee(self.encoder, train_loader=dataloader)
@@ -264,9 +265,10 @@ class DummyEncoder(MixInEncoder):
         y: Tensor | np.ndarray | pd.DataFrame,
     ) -> None:
         if self.output_size is None:
-            self.output_size = y.shape[1]
+            self.output_size = y.shape[0]
 
     def predict(self, X: Tensor | np.ndarray | pd.DataFrame) -> np.ndarray:
+
         if self.weights is None:
             return (
                 np.ones(shape=(X.shape[0], self.output_size))

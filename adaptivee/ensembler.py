@@ -110,8 +110,8 @@ class AdaptiveEnsembler:
         if not isinstance(self.target_weighter, MixInStaticTargetWeighter):
             self.encoder.train(X, weights)
 
-        if X_val is not None and y_val is not None:
-            self.tune_reweighter(X_val, y_val)
+            if X_val is not None and y_val is not None:
+                self.tune_reweighter(X_val, y_val)
 
         if return_score:
             raise NotImplementedError()
