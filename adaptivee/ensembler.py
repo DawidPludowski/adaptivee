@@ -87,12 +87,12 @@ class AdaptiveEnsembler:
         self.use_autogluon = use_autogluon
 
     def create_adaptive_ensembler(
-        self, 
+        self,
         X: np.ndarray,
         y: np.ndarray,
         X_val: np.ndarray | None = None,
         y_val: np.ndarray | None = None,
-        return_score: bool = False
+        return_score: bool = False,
     ) -> None:
 
         if self.use_autogluon:
@@ -109,20 +109,22 @@ class AdaptiveEnsembler:
 
         if not isinstance(self.target_weighter, MixInStaticTargetWeighter):
             self.encoder.train(X, weights)
-            
+
         if X_val is not None and y_val is not None:
             self.tune_reweighter(X_val, y_val)
 
         if return_score:
             raise NotImplementedError()
-        
+
     def tune_reweighter(self, X: np.ndarray, y: np.ndarray) -> None:
         encoder_weights = self.encoder.predict(X)
         y_pred = self._get_models_preds(X)
-        self.reweighter.optimize_hp(y_true=y,
-                                    y_pred=y_pred,
-                                    static_weights=self.static_weights,
-                                    encoder_weights=encoder_weights)
+        self.reweighter.optimize_hp(
+            y_true=y,
+            y_pred=y_pred,
+            static_weights=self.static_weights,
+            encoder_weights=encoder_weights,
+        )
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         y_preds = self._get_models_preds(X)

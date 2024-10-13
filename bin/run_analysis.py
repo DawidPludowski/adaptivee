@@ -4,7 +4,7 @@ from itertools import product
 
 from loguru import logger
 
-from adaptivee.encoders import DummyEncoder
+from adaptivee.encoders import DummyEncoder, LiltabEncoder
 from adaptivee.reweighting import SimpleReweight
 from analysis.auto_report import AutoReport, AutoSummaryReport
 from analysis.configs import REWEIGHTERS  # DATASETS,
@@ -20,6 +20,11 @@ from analysis.data.openml import get_data
 def __get_class_name(obj: any) -> str:
     if isinstance(obj, partial):
         cls_name = f"{obj.__getattribute__('func').__name__}"
+        try:
+            for key, val in obj.__getattribute__("keywords"):
+                cls_name += f"{key}={val}"
+        except Exception:
+            pass
     elif isinstance(obj, type):
         cls_name = obj.__name__
     else:
@@ -34,7 +39,9 @@ def main() -> None:
 
     logger.info("STATIC APPROACHES")
 
-    for df_train, df_test, df_val, data_name in get_data("resources/data/openml"):
+    for df_train, df_test, df_val, data_name in get_data(
+        "resources/data/openml"
+    ):
 
         X_train, y_train = (
             df_train.iloc[:, :-1].to_numpy(),
@@ -42,7 +49,7 @@ def main() -> None:
         )
         X_val, y_val = (
             df_val.iloc[:, :-1].to_numpy(),
-            df_val.iloc[:, -1].tp_numpy()
+            df_val.iloc[:, -1].tp_numpy(),
         )
         X_test, y_test = (
             df_test.iloc[:, :-1].to_numpy(),
@@ -95,15 +102,19 @@ def main() -> None:
         logger.info(f"Start data: {data_name}")
 
         for idx, combination in enumerate(
-            product(ENCODERS, REWEIGHTERS, TARGET_WEIGHTERS, MODELS)
+            product(REWEIGHTERS, TARGET_WEIGHTERS, MODELS)
         ):
+
+            target_weighter_name = __get_class_name(TARGET_WEIGHTERS)
+            encoder = LiltabEncoder(
+                f"resources/models/{target_weighter_name}.ckpt"
+            )
 
             logger.info(f"Start experiment #{idx:02}")
 
-            encoder = combination[0]
-            reweighter = combination[1]
-            target_weighter = combination[2]
-            models = combination[3]
+            reweighter = combination[0]
+            target_weighter = combination[1]
+            models = combination[2]
 
             report = AutoReport(
                 X_train,

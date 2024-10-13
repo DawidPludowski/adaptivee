@@ -24,7 +24,7 @@ class MixInTargetWeighter(ABC):
         self, models_preds: np.ndarray, true_y: np.ndarray | pd.Series
     ) -> np.ndarray:
 
-        if isinstance(true_y, pd.Series):
+        if isinstance(true_y, pd.Series) or isinstance(true_y, pd.DataFrame):
             true_y = true_y.to_numpy()
 
         true_y = true_y.reshape((-1, 1))
@@ -139,6 +139,10 @@ class StaticGridWeighter(MixInStaticTargetWeighter):
         models_preds: np.ndarray,
         true_y: np.ndarray,
     ):
+
+        if isinstance(true_y, pd.Series) or isinstance(true_y, pd.DataFrame):
+            true_y = true_y.to_numpy()
+
         weights = np.array(weights).reshape((1, -1))
         y_pred = models_preds * weights
 

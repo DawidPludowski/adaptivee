@@ -15,9 +15,13 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
-from adaptivee.target_weights import StaticFixedWeights, StaticGridWeighter
-from analysis.ensembler import AdaptiveEnsembler
 from adaptivee.reweighting import DirectionReweight
+from adaptivee.target_weights import (
+    SoftMaxWeighter,
+    StaticFixedWeights,
+    StaticGridWeighter,
+)
+from analysis.ensembler import AdaptiveEnsembler
 
 
 class AutoReport:
@@ -80,8 +84,6 @@ class AutoReport:
         self.vizualize_data()
         self.make_experiment()
         self.put_meta_data()
-                
-        
 
     def vizualize_data(self) -> None:
 
@@ -127,20 +129,23 @@ class AutoReport:
                 "val_size": self.X_val.shape[0],
                 "test_size": self.X_test.shape[0],
                 "train_y_ratio": float((self.y_train == 1).mean()),
-                "n_features": self.X_train.shape[1]
+                "n_features": self.X_train.shape[1],
             },
             "reweighter": {
                 "name": type(self.reweighter).__name__,
             },
-            "data_name": self.data_name, # legacy
-            "target_weighter": type(self.target_weighter).__name__,
+            "target_weighter": {
+                "name": type(self.target_weighter).__name__,
+            },
             "encoder": type(self.encoder).__name__,
-            "reweighter": type(self.reweighter).__name__, # legacy
             "meta_data": self.meta_data,
         }
-        
+
         if isinstance(self.reweighter, DirectionReweight):
-            meta['reweighter']['step_size'] = self.reweighter.step_size,
+            meta["reweighter"]["step_size"] = (self.reweighter.step_size,)
+
+        if isinstance(self.target_weighter, SoftMaxWeighter):
+            meta["target_weighter"]["alpha"] = self.target_weighter.alpha
 
         with open(self.root_dir / "meta_data.yaml", "w") as f:
             yaml.dump(meta, f)
@@ -219,24 +224,38 @@ class AutoReport:
         df_static = pd.DataFrame(data=metrics_static).T
         df_static.columns = ["metric", "data", "score"]
         df_static["type"] = "static"
-        
+
         metric_bounds = {
-            1: ["acc", "test", self.__get_metric_bounds(accuracy_score, is_prob=True)],
-            3: ["roc-auc", "test", self.__get_metric_bounds(roc_auc_score, is_prob=False)],
+            1: [
+                "acc",
+                "test",
+                self.__get_metric_bounds(accuracy_score, is_prob=True),
+            ],
+            3: [
+                "roc-auc",
+                "test",
+                self.__get_metric_bounds(roc_auc_score, is_prob=False),
+            ],
             5: [
                 "acc-b",
                 "test",
-                self.__get_metric_bounds(balanced_accuracy_score, is_prob=False),
+                self.__get_metric_bounds(
+                    balanced_accuracy_score, is_prob=False
+                ),
             ],
-            7: ["f1", "test", self.__get_metric_bounds(f1_score, is_prob=False)],
+            7: [
+                "f1",
+                "test",
+                self.__get_metric_bounds(f1_score, is_prob=False),
+            ],
         }
         df_bounds = pd.DataFrame(data=metric_bounds).T
-        df_bounds.columns = ['metric', 'data', 'score']
-        df_bounds['type'] = 'bounds'
+        df_bounds.columns = ["metric", "data", "score"]
+        df_bounds["type"] = "bounds"
 
-        pd.concat([df_dynamic, df_static, df_bounds], ignore_index=True, axis=0).to_csv(
-            self.root_dir / "metrics.csv", index=False
-        )
+        pd.concat(
+            [df_dynamic, df_static, df_bounds], ignore_index=True, axis=0
+        ).to_csv(self.root_dir / "metrics.csv", index=False)
 
     def __report_weights(
         self,
@@ -256,9 +275,13 @@ class AutoReport:
         target_test_weights = self.target_weighter.get_target_weights(
             y_test_preds_all, y_test
         )
-        
-        static_train_weights = self.static_weighter.get_target_weights(y_train_preds_all, y_train)
-        static_test_weights = self.static_weighter.get_target_weights(y_test_preds_all, y_test)
+
+        static_train_weights = self.static_weighter.get_target_weights(
+            y_train_preds_all, y_train
+        )
+        static_test_weights = self.static_weighter.get_target_weights(
+            y_test_preds_all, y_test
+        )
 
         # csv
 
@@ -277,15 +300,14 @@ class AutoReport:
         target_test_weights_df = pd.DataFrame(data=target_test_weights)
         target_test_weights_df["type"] = "target_test_weights"
         target_test_weights_df.reset_index(drop=False, inplace=True)
-        
+
         static_train_weights_df = pd.DataFrame(data=static_train_weights)
-        static_train_weights_df['type'] = 'static_train_weights'
+        static_train_weights_df["type"] = "static_train_weights"
         static_train_weights_df.reset_index(drop=False, inplace=True)
-        
+
         static_test_weights_df = pd.DataFrame(data=static_test_weights)
-        static_test_weights_df['type'] = 'static_test_weights'
+        static_test_weights_df["type"] = "static_test_weights"
         static_test_weights_df.reset_index(drop=False, inplace=True)
-        
 
         df = pd.concat(
             [
@@ -294,7 +316,7 @@ class AutoReport:
                 target_train_weights_df,
                 target_test_weights_df,
                 static_train_weights_df,
-                static_test_weights_df
+                static_test_weights_df,
             ]
         )
 
@@ -327,29 +349,31 @@ class AutoReport:
 
         plt.savefig(f"{self.root_dir}/weights_diff.png")
         plt.clf()
-        
-    def __get_metric_bounds(self,
-                          metric: callable,
-                          is_prob: bool = False) -> float:
-        
+
+    def __get_metric_bounds(
+        self, metric: callable, is_prob: bool = False
+    ) -> float:
+
         X_test, y_test = self.X_test, self.y_test
-        
+
         # dynamic
         y_pred = self.ensemble.predict(X_test).reshape(-1, 1)
         diff = np.abs(y_test - y_pred)
-        
+
         best_pred_idx = np.argmax(diff, axis=1)
         best_pred = y_pred[np.arange(y_pred.shape[0]), best_pred_idx]
-        
+
         # static
         static_pred = self.ensemble.predict_static(X_test)
-        
+
         if not is_prob:
             best_pred = (0.5 < best_pred).astype(int)
-            static_pred = (0.5 < best_pred).astype(int)    
-            
-        metric_worst, metric_best = metric(y_test, static_pred), metric(y_test, best_pred)
-        
+            static_pred = (0.5 < best_pred).astype(int)
+
+        metric_worst, metric_best = metric(y_test, static_pred), metric(
+            y_test, best_pred
+        )
+
         return metric_worst, metric_best
 
 

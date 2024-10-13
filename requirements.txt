@@ -7,7 +7,7 @@ autogluon.tabular==1.1.1
 autogluon.timeseries==1.1.1
 liltab==1.0.5
 numpy==1.24.1
-pandas==2.2.2
+pandas==2.2.3
 scikit_learn==1.4.0
 scipy==1.14.1
 torch==2.2.2

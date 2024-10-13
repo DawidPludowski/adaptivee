@@ -1,3 +1,4 @@
+from functools import partial
 from pathlib import Path
 
 import numpy as np
@@ -8,6 +9,22 @@ from adaptivee.encoders import DummyEncoder
 from adaptivee.ensembler import AdaptiveEnsembler
 from adaptivee.target_weights import MixInStaticTargetWeighter
 from analysis.configs import MODELS, TARGET_WEIGHTERS
+
+
+def __get_class_name(obj: any) -> str:
+    if isinstance(obj, partial):
+        cls_name = f"{obj.__getattribute__('func').__name__}"
+        try:
+            for key, val in obj.__getattribute__("keywords"):
+                cls_name += f"{key}={val}"
+        except Exception:
+            pass
+    elif isinstance(obj, type):
+        cls_name = obj.__name__
+    else:
+        cls_name = type(obj).__name__
+
+    return cls_name
 
 
 def _get_model() -> list[any]:
@@ -30,9 +47,9 @@ def process_for_weighter(
         target_weighter=target_weighter,
         encoder=DummyEncoder(),
         is_models_trained=True,
-        use_autogluon=True
+        use_autogluon=True,
     )
-    ensembler.create_adaptive_ensembler(X.to_numpy(), y.to_numpy())
+    ensembler.create_adaptive_ensembler(X, y)
 
     preds = ensembler._get_models_preds(X)
     y_target = target_weighter.get_target_weights(preds, y.to_numpy())
@@ -57,11 +74,11 @@ def main(
 
     for data_path in Path(source_path).glob("*.csv"):
         df = pd.read_csv(data_path)
-        X, y = df.iloc[:, :-1], df.iloc[:, -1]
+        X, y = df.iloc[:, :-1], df.iloc[:, [-1]]
 
         for TargetWeighter in TARGET_WEIGHTERS:
             logger.info(
-                f"run {type(TargetWeighter()).__name__} on {data_path.stem}; cnt={cnt}"
+                f"run {__get_class_name(TargetWeighter)} on {data_path.stem}; cnt={cnt}"
             )
             process_for_weighter(
                 TargetWeighter(),
