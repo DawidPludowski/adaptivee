@@ -11,9 +11,9 @@ from liltab.train.trainer import HeterogenousAttributesNetworkTrainer
 from torch import nn
 
 DATAPATHS = [
-    "SotMaxWeighter-1",
-    "SotMaxWeighter-2",
-    "SotMaxWeighter-05",
+    "SoftMaxWeighter;alpha=0.9",
+    "SoftMaxWeighter;alpha=2",
+    "SoftMaxWeighter;alpha=0.5",
     "OneHotWeighter",
 ]
 
@@ -26,7 +26,7 @@ def main():
 
         train_loader = (
             ComposedDataLoaderFactory.create_composed_dataloader_from_path(
-                path=Path("resources/data/openml/encoder-mod/SoftMaxWeighter"),
+                path=Path(f"resources/data/openml/encoder-mod/{datapth}"),
                 dataset_cls=PandasDataset,
                 dataset_creation_args={"response_regex": "target.*"},
                 loader_cls=FewShotDataLoader,
@@ -37,9 +37,9 @@ def main():
         )
 
         model = HeterogenousAttributesNetwork(
-            hidden_representation_size=6,
-            n_hidden_layers=2,
-            hidden_size=8,
+            hidden_representation_size=8,
+            n_hidden_layers=4,
+            hidden_size=16,
             dropout_rate=0.3,
             inner_activation_function=nn.ReLU(),
             output_activation_function=nn.Softmax(),

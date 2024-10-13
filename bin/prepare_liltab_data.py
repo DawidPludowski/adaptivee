@@ -13,16 +13,16 @@ from analysis.configs import MODELS, TARGET_WEIGHTERS
 
 def __get_class_name(obj: any) -> str:
     if isinstance(obj, partial):
-        cls_name = f"{obj.__getattribute__('func').__name__}"
-        try:
-            for key, val in obj.__getattribute__("keywords"):
-                cls_name += f"{key}={val}"
-        except Exception:
-            pass
+        cls_name = f"{obj.__getattribute__('func').__name__};"
+        for key, val in obj.__getattribute__("keywords").items():
+            cls_name += f"{key}={val};"
     elif isinstance(obj, type):
         cls_name = obj.__name__
     else:
         cls_name = type(obj).__name__
+
+    if cls_name[-1] == ";":
+        cls_name = cls_name[:-1]
 
     return cls_name
 
@@ -40,6 +40,13 @@ def process_for_weighter(
     dst_path: str,
     data_name: str,
 ) -> None:
+
+    if Path(Path(dst_path) / weighter_name / f"{data_name}.csv").exists():
+        logger.warning(
+            f"{__get_class_name(target_weighter)} on {data_name} skipped"
+        )
+        return
+
     (Path(dst_path) / f"{weighter_name}").mkdir(exist_ok=True, parents=True)
 
     ensembler = AdaptiveEnsembler(
@@ -84,7 +91,7 @@ def main(
                 TargetWeighter(),
                 X,
                 y,
-                type(TargetWeighter()).__name__,
+                __get_class_name(TargetWeighter),
                 dst_path,
                 data_path.stem,
             )

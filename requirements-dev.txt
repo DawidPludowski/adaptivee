@@ -8,7 +8,7 @@ autogluon.timeseries==1.1.1
 liltab==1.0.5
 loguru==0.7.2
 matplotlib==3.9.2
-numpy==1.24.1
+numpy==2.1.2
 pandas==2.2.3
 pytest==8.2.2
 PyYAML==6.0.1
