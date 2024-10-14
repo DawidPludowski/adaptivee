@@ -14,7 +14,7 @@ DATAPATHS = [
     "SoftMaxWeighter;alpha=0.9",
     "SoftMaxWeighter;alpha=2",
     "SoftMaxWeighter;alpha=0.5",
-    "OneHotWeighter",
+    # "OneHotWeighter",
 ]
 
 
@@ -38,9 +38,9 @@ def main():
 
         model = HeterogenousAttributesNetwork(
             hidden_representation_size=8,
-            n_hidden_layers=4,
-            hidden_size=16,
-            dropout_rate=0.3,
+            n_hidden_layers=2,
+            hidden_size=256,
+            dropout_rate=0.0,
             inner_activation_function=nn.ReLU(),
             output_activation_function=nn.Softmax(),
             is_classifier=False,

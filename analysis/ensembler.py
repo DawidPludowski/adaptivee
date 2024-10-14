@@ -14,7 +14,11 @@ class AdaptiveEnsembler(Adaptivee):
         X_val: np.ndarray | None = None,
         y_val: np.ndarray | None = None,
         return_score: bool = False,
+        encoder_args=None,
     ) -> None:
+
+        if encoder_args is None:
+            encoder_args = {}
 
         if self.use_autogluon:
             logger.info("Create models with AutoGluon...")
@@ -40,7 +44,7 @@ class AdaptiveEnsembler(Adaptivee):
 
         if not isinstance(self.target_weighter, MixInStaticTargetWeighter):
             logger.info("Encoder training...")
-            self.encoder.train(X, weights)
+            self.encoder.train(X, weights, **encoder_args)
 
             if X_val is not None and y_val is not None:
                 logger.info("Tune reweighter...")

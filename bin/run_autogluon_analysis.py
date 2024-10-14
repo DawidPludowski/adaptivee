@@ -1,7 +1,10 @@
 import logging
+import pickle as pkl
 from datetime import datetime
 from functools import partial
+from pathlib import Path
 
+import numpy as np
 from loguru import logger
 
 from adaptivee.encoders import LiltabEncoder
@@ -73,6 +76,7 @@ def main() -> None:
                 report_name=f"{timestamp}/{data_name}/{__get_class_name(encoder)}"
                 f"_{__get_class_name(reweighter)}_{__get_class_name(target_weighter)}",
                 data_name=data_name,
+                models_from_file=True,
             )
 
             report.make_report()

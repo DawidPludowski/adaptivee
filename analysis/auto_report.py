@@ -1,3 +1,4 @@
+import pickle as pkl
 import warnings
 from datetime import datetime
 from pathlib import Path
@@ -7,6 +8,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import yaml
+from loguru import logger
 from sklearn.decomposition import PCA
 from sklearn.metrics import (
     accuracy_score,
@@ -42,6 +44,7 @@ class AutoReport:
         result_dir: str | Path = "report",
         report_name: str = None,
         data_name: str = None,
+        models_from_file: bool = False,
     ) -> None:
         self.X_train = X_train
         self.y_train = y_train
@@ -54,6 +57,10 @@ class AutoReport:
             self.models = [Model() for Model in Models]
         else:
             self.models = None
+
+        if models_from_file:
+            models, weights = self.__get_models_weights(data_name)
+            self.models = models
 
         self.target_weighter = TargetWeighter()
         self.encoder = Encoder()
@@ -70,13 +77,35 @@ class AutoReport:
             self.target_weighter,
             self.reweighter,
             static_weighter=self.static_weighter,
-            is_models_trained=False,
+            is_models_trained=True,
             use_autogluon=True if self.models is None else False,
         )
+
+        if models_from_file:
+            self.ensemble.static_weighter.weights = weights
+            self.ensemble.static_weights = weights
 
         self.root_dir = Path(result_dir) / report_name
         self.meta_data = meta_data
         self.data_name = data_name
+
+    def __get_models_weights(
+        self, data_name: str, root_path: str = "resources/models/autogluon"
+    ) -> tuple[list[any], np.ndarray]:
+        print(data_name)
+        model_path = Path(root_path) / data_name / "models.pkl"
+        weights_path = Path(root_path) / data_name / "weights.pkl"
+
+        with open(model_path, "rb") as f:
+            models = pkl.load(f)
+        with open(weights_path, "rb") as f:
+            weights = pkl.load(f)
+        if len(models) == 1:
+            logger.warning("Only one model in file")
+
+        logger.info(f"Number of models: {len(models)}")
+
+        return models, weights
 
     def make_report(self) -> None:
         self.root_dir.mkdir(exist_ok=True, parents=True)
@@ -120,6 +149,17 @@ class AutoReport:
 
         self.__report_metrics(X_train, y_train, X_test, y_test)
         self.__report_weights(X_train, y_train, X_test, y_test)
+        self.__save_models()
+
+    def __save_models(self) -> None:
+        models = self.ensemble.models
+        weights = self.ensemble.static_weights
+
+        with open(self.root_dir / "models.pkl", "wb") as f:
+            pkl.dump(models, f)
+
+        with open(self.root_dir / "weights.pkl", "wb") as f:
+            pkl.dump(weights, f)
 
     def put_meta_data(self) -> None:
         meta = {
@@ -450,8 +490,8 @@ class AutoSummaryReport:
         for dir_ in dirs:
             weights_files = dir_.rglob("weights.csv")
             for weight_file in weights_files:
-                data_name = weight_file.parent.parent.stem
-                experiment_name = weight_file.parent.stem
+                data_name = weight_file.parent.parent.parent.parent.stem
+                experiment_name = weight_file.parent.parent.parent.stem
 
                 weights_summary = pd.read_csv(weight_file)
 
@@ -470,14 +510,16 @@ class AutoSummaryReport:
 
                 diffs = test_weights - target_test_weights
                 norm_l2 = np.linalg.norm(diffs)
-                std = np.std(test_weights)
+                std_res = np.std(test_weights, axis=0).mean()
+                std_target = np.std(target_test_weights, axis=0).mean()
 
                 summary_df = pd.DataFrame(
                     data={
                         "data_name": [data_name],
                         "experiment_name": [experiment_name],
                         "norm": [norm_l2],
-                        "std": [std],
+                        "std": [std_res],
+                        "std_target": [std_target],
                     }
                 )
                 summary_dfs.append(summary_df)

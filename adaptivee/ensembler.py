@@ -93,7 +93,11 @@ class AdaptiveEnsembler:
         X_val: np.ndarray | None = None,
         y_val: np.ndarray | None = None,
         return_score: bool = False,
+        encoder_args=None,
     ) -> None:
+
+        if encoder_args is None:
+            encoder_args = {}
 
         if self.use_autogluon:
             self._train_autogluon_ensemble(X, y)
@@ -108,7 +112,7 @@ class AdaptiveEnsembler:
         self.static_weights = static_weights
 
         if not isinstance(self.target_weighter, MixInStaticTargetWeighter):
-            self.encoder.train(X, weights)
+            self.encoder.train(X, weights, **encoder_args)
 
             if X_val is not None and y_val is not None:
                 self.tune_reweighter(X_val, y_val)
@@ -186,7 +190,7 @@ class AdaptiveEnsembler:
         y_preds = []
         for model in self.models:
             y_pred = model.predict_proba(X)
-            if not self.use_autogluon:
+            if len(y_pred.shape) != 1 and y_pred.shape[1] != 1:
                 y_pred = y_pred[:, 1]
             y_preds.append(y_pred.reshape(-1, 1))
 

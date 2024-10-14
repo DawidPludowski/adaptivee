@@ -75,8 +75,8 @@ ENCODERS: list[MixInEncoder] = [
 ]
 REWEIGHTERS: list[MixInReweight] = [DirectionReweight, SimpleReweight]
 TARGET_WEIGHTERS: list[MixInTargetWeighter] = [
-    # OneHotWeighter,
-    partial(SoftMaxWeighter, alpha=0.9),
+    OneHotWeighter,
+    # partial(SoftMaxWeighter, alpha=0.9),
     # partial(SoftMaxWeighter, alpha=2),
     # partial(SoftMaxWeighter, alpha=0.5),
 ]
