@@ -36,3 +36,11 @@ Pokazujemy
 * pokazujemy entropię modeli
 * pokazujemy jakie modele i ile i jaka średnia waga
 * pokazujemy średni step size i różnicę pomiędzy val a test
+
+Komentarze po recenzji:
+
+* zbadanie czasu - overhead, z podizałem na liczbę modeli, wielkość datasetu itp
+* analiza metryk klastrów (klaster to punkty przewidywane najlepiej przez k-ty model)
+* inny benchmark ofc
+* badanie wpływu na overfitting - ale jak (?)
+* generalnie porównanie z complex model i "on complex model" - ale jedno i drugie jest zaadresowane, poza DL-em
