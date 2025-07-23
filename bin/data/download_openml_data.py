@@ -86,7 +86,7 @@ def download_tasks(
 ) -> None:
 
     download_dst = Path(download_dst)
-    download_dst.mkdir(exist_ok=True)
+    download_dst.mkdir(exist_ok=True, parents=True)
 
     downloaded_cnt = 0
 
