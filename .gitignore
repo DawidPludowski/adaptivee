@@ -184,3 +184,7 @@ results/*
 # Autogluon models
 
 AutogluonModels/*
+
+## temp files
+temp.*
+*tmp*

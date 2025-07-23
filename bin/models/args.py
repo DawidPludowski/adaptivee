@@ -6,7 +6,6 @@ def get_des_baselines_args() -> Namespace:
     parser.add_argument("--train-path", type=str, required=True)
     parser.add_argument("--test-path", type=str, required=True)
     parser.add_argument("--out-path", type=str, required=False)
-    parser.add_argument
     parser.add_argument(
         "--save-out",
         action="store_true",
