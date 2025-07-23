@@ -129,7 +129,7 @@ def download_tasks(
         X = pipeline.fit_transform(X)
         y = LabelEncoder().fit_transform(y)
 
-        np.savez(download_dst / f"{task_name}.npz", X, y)
+        np.savez(download_dst / f"{task_name}.npz", X=X, y=y)
 
         downloaded_cnt += 1
 

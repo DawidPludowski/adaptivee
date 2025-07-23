@@ -6,7 +6,7 @@ def get_download_args() -> Namespace:
     parser.add_argument(
         "--outdir",
         type=str,
-        default="resources/liltab",
+        default="resources/liltab/raw",
         help="Path to save datasets.",
     )
     parser.add_argument(
@@ -20,8 +20,28 @@ def get_download_args() -> Namespace:
 
 
 def get_split_args() -> Namespace:
-    pass
+    parser = ArgumentParser()
+    parser.add_argument("--inference-train-frac", type=float)
+    parser.add_argument("--encoder-train-frac", type=float)
+    parser.add_argument("--inference-frac", type=float)
+    parser.add_argument("--seed", type=int, default=123, required=False)
+    parser.add_argument("--input-path", type=str)
+    parser.add_argument("--output-path", type=str)
+    parser.add_argument("--inference-outer-split", action="store_true")
+    parser.add_argument("--encoder-outer-split", action="store_true")
+    return parser.parse_args()
 
 
 def get_pretraining_weights_args() -> Namespace:
-    pass
+    parser = ArgumentParser()
+    parser.add_argument("--model-list-id", type=str)
+    parser.add_argument("--input-path", type=str)
+    parser.add_argument(
+        "--alpha", type=float, help="Parameters to softmax weighting"
+    )
+    parser.add_argument(
+        "--use-onehot",
+        action="store_true",
+        help="Change Softmax weighter to onehot; overwrite alpha",
+    )
+    return parser.parse_args()
