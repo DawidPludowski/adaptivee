@@ -2,9 +2,9 @@
 #SBATCH --account=mi2lab-normal
 #SBATCH --job-name=ada-w
 #SBATCH --partition=short
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=1G
-#SBATCH --time=00:02:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=32G
+#SBATCH --time=00:05:00
 #SBATCH --ntasks=1
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=dawid.pludowski@gmail.com
@@ -20,22 +20,22 @@ cnt=0
 for path in "${input_paths[@]}"; do
     for id in "${model_ids[@]}"; do
         for alpha in "${alphas[@]}"; do
-            if (( ${SLURM_ARRAY_TASK_ID} == $cnt )); then
+            if (( ${SLURM_ARRAY_TASK_ID} == cnt )); then
                 if [[ "$alpha" == "inf" ]]; then
                     echo "path=$path, id=$id, onehot"
-                    # python bin/data/prepare_pretraining_weights.py \
-                    #     --model-list-id $id \
-                    #     --input-path $path \
-                    #     --use-onehot
+                    python bin/data/prepare_pretraining_weights.py \
+                        --model-list-id $id \
+                        --input-path $path \
+                        --use-onehot
                 else
                     echo "path=$path, id=$id, alpha=$alpha"
-                    # python bin/data/prepare_pretraining_weights.py \
-                    #     --model-list-id $id \
-                    #     --input-path $path \
-                    #     --alpha $alpha
+                    python bin/data/prepare_pretraining_weights.py \
+                        --model-list-id $id \
+                        --input-path $path \
+                        --alpha $alpha
                 fi
-            (($cnt+=1))
             fi
+            ((cnt+=1))
         done
     done
 done
