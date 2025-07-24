@@ -83,7 +83,7 @@ class SoftMaxWeighter(MixInTargetWeighter):
             diffs = (diffs - 0.5) * 2
 
         np.seterr(divide="ignore")
-        weights = softmax((1 - np.log(diffs)) * self.alpha, axis=1)
+        weights = softmax((np.log(1 - diffs)) * self.alpha, axis=1)
         np.seterr(divide="warn")
 
         return weights
