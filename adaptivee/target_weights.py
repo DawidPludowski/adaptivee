@@ -66,8 +66,9 @@ class MixInStaticTargetWeighter(MixInTargetWeighter):
 
 class SoftMaxWeighter(MixInTargetWeighter):
 
-    def __init__(self, alpha: float = 0.9) -> None:
+    def __init__(self, alpha: float = 0.9, scale05: bool = True) -> None:
         self.alpha = alpha
+        self.scale05 = scale05
         super().__init__()
 
     def _get_target_weights(
@@ -75,7 +76,15 @@ class SoftMaxWeighter(MixInTargetWeighter):
     ) -> np.ndarray:
 
         diffs = np.abs(models_preds - true_y)
-        weights = softmax((1 - diffs) * self.alpha, axis=1)
+        misprediction = (diffs > 0.5).astype(int)
+        diffs = diffs * (1 - misprediction)
+
+        if self.scale05:
+            diffs = (diffs - 0.5) * 2
+
+        np.seterr(divide="ignore")
+        weights = softmax((1 - np.log(diffs)) * self.alpha, axis=1)
+        np.seterr(divide="warn")
 
         return weights
 
