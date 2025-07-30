@@ -8,9 +8,10 @@
 #SBATCH --ntasks=1
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=dawid.pludowski@gmail.com
-#SBATCH --output=/mnt/evafs/faculty/home/dpludowski/code/adaptivee/logs/des-baselines-%A_%a.log
+#SBATCH --output=/mnt/evafs/groups/mi2lab/dpludowski/code/adaptivee/logs/des-baselines-%A_%a.log
 
 source .venv/bin/activate
+export PYTHONPATH=`pwd`
 
 echo "Start $INPUTDIR"
 
@@ -22,5 +23,11 @@ for filename in "$INPUTDIR"/*; do
         --train-path $train_path \
         --test-path $test_path \
         --model-list-id "SIMPLE-1" \
+        --save-out
+
+    python bin/models/des_baselines.py \
+        --train-path $train_path \
+        --test-path $test_path \
+        --model-list-id "ADVANCED-1" \
         --save-out
 done

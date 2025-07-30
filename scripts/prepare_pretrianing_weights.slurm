@@ -8,9 +8,10 @@
 #SBATCH --ntasks=1
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=dawid.pludowski@gmail.com
-#SBATCH --output=/mnt/evafs/faculty/home/dpludowski/code/adaptivee/logs/prepare_pretraining_weights-%A_%a.log
+#SBATCH --output=/mnt/evafs/groups/mi2lab/dpludowski/code/adaptivee/logs/prepare_pretraining_weights-%A_%a.log
 
 source .venv/bin/activate
+export PYTHONPATH=`pwd`
 
 IFS=' ' read -r -a alphas <<< "$ALPHAS"
 IFS=' ' read -r -a model_ids <<< "$MODELS"

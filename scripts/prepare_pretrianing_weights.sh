@@ -36,4 +36,5 @@ n_tasks=$(( ${#alphas[@]} * ${#model_ids[@]} * ${#input_paths[@]} ))
 
 export ALPHAS MODELS INPUTS
 
-sbatch --export=ALL --array=0-$((n_tasks - 1)) scripts/prepare_pretraining_weights.slurm
+sbatch --export=ALL --array=0-$((n_tasks - 1)) ./scripts/prepare_pretrianing_weights.slurm
+# sbatch --export=ALL --array=0-1 ./scripts/prepare_pretrianing_weights.slurm
