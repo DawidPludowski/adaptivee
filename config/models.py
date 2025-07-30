@@ -14,6 +14,9 @@ from sklearn.ensemble import StackingClassifier
 from sklearn.linear_model import LogisticRegression
 from deslib.des.knora_u import KNORAU
 from functools import partial
+from xgboost import XGBClassifier
+from catboost import CatBoostClassifier
+from lightgbm import LGBMClassifier
 
 MODELS_LISTS = {
     "SIMPLE-1": [
@@ -22,7 +25,13 @@ MODELS_LISTS = {
         DecisionTreeClassifier,
         RandomForestClassifier,
         KNeighborsClassifier,
-    ]
+    ],
+    "ADVANCED-1": [
+        XGBClassifier,
+        CatBoostClassifier,
+        LGBMClassifier,
+        RandomForestClassifier,
+    ],
 }
 
 BASELINES_LIST = {

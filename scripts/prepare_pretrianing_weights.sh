@@ -8,7 +8,10 @@ alphas=(
     10
     inf
 )
-model_ids=("SIMPLE-1")
+model_ids=(
+    "SIMPLE-1"
+    "ADVANCED-1"
+)
 
 input_paths=(
     "resources/liltab/split/encoder/test"
