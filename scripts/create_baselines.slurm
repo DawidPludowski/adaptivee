@@ -4,7 +4,7 @@
 #SBATCH --partition=short
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
-#SBATCH --time=00:03:00
+#SBATCH --time=12:00:00
 #SBATCH --ntasks=1
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=dawid.pludowski@gmail.com
