@@ -77,10 +77,11 @@ class SoftMaxWeighter(MixInTargetWeighter):
 
         diffs = np.abs(models_preds - true_y)
         misprediction = (diffs > 0.5).astype(int)
-        diffs = diffs * (1 - misprediction)
+        diffs = diffs - (misprediction * (diffs - 1))
 
         if self.scale05:
-            diffs = (diffs - 0.5) * 2
+            # if it's not a misprediction [0,0.5], scale it to [0,1]
+            diffs = diffs + diffs * (1 - misprediction)
 
         np.seterr(divide="ignore")
         weights = softmax((np.log(1 - diffs)) * self.alpha, axis=1)

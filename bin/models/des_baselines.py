@@ -7,6 +7,7 @@ import json
 from sklearn.ensemble import StackingClassifier
 from functools import partial
 from loguru import logger
+import time
 
 
 def main() -> None:
@@ -39,12 +40,16 @@ def main() -> None:
         else:
             baseline = BASELINE_CLS(pool_classifiers=models)
 
+        start = time.time()
         baseline.fit(X_train, y_train)
+        end = time.time()
+
         y_train_p = baseline.predict(X_train)
         y_test_p = baseline.predict(X_test)
         metrics[baseline_name] = get_metrics(
             y_train, y_train_p, y_test, y_test_p
         )
+        metrics[baseline_name]["time_s"] = end - start
 
         if args.save_out:
             train_data[f"{baseline_name}_pred"] = y_train_p
