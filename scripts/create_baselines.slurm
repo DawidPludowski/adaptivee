@@ -25,9 +25,9 @@ for filename in "$INPUTDIR"/*; do
         --model-list-id "SIMPLE-1" \
         --save-out
 
-    python bin/models/des_baselines.py \
-        --train-path $train_path \
-        --test-path $test_path \
-        --model-list-id "ADVANCED-1" \
-        --save-out
+    # python bin/models/des_baselines.py \
+    #     --train-path $train_path \
+    #     --test-path $test_path \
+    #     --model-list-id "ADVANCED-1" \
+    #     --save-out
 done

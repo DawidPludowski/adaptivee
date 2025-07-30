@@ -19,7 +19,7 @@ def main() -> None:
     out_path = args.out_path
 
     if out_path is None:
-        out_path = test_path.parent / "results.json"
+        out_path = test_path.parent / f"{test_path.stem}.json"
 
     train_data = dict(np.load(train_path))
     test_data = dict(np.load(test_path))

@@ -188,3 +188,4 @@ AutogluonModels/*
 ## temp files
 temp.*
 *tmp*
+*.zip

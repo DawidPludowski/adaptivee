@@ -10,18 +10,18 @@ alphas=(
 )
 model_ids=(
     "SIMPLE-1"
-    "ADVANCED-1"
+    # "ADVANCED-1"
 )
 
 input_paths=(
-    "resources/liltab/split/encoder/test"
-    "resources/liltab/split/encoder/train"
-    "resources/liltab/split/inference/test"
-    "resources/liltab/split/inference/train"
-    "resources/Multitab/data-split/encoder/test"
-    "resources/Multitab/data-split/encoder/train"
-    "resources/Multitab/data-split/inference/test"
-    "resources/Multitab/data-split/inference/train"
+    # "resources/liltab/split/encoder/test"
+    # "resources/liltab/split/encoder/train"
+    # "resources/liltab/split/inference/test"
+    # "resources/liltab/split/inference/train"
+    # "resources/Multitab/data-split/encoder/test"
+    # "resources/Multitab/data-split/encoder/train"
+    # "resources/Multitab/data-split/inference/test"
+    # "resources/Multitab/data-split/inference/train"
     "resources/tabzilla/datasets_split/encoder/test"
     "resources/tabzilla/datasets_split/encoder/train"
     "resources/tabzilla/datasets_split/inference/test"

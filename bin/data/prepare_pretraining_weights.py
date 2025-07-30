@@ -32,7 +32,9 @@ def create_y_target(
 
     preds = ensembler._get_models_preds(X)
     y_target = target_weighter.get_target_weights(preds, y)
-    return y_target
+
+    y_preds = ensembler._get_models_preds(X)
+    return y_target, y_preds
 
 
 def main() -> None:
@@ -54,7 +56,7 @@ def main() -> None:
         for model in models:
             model.fit(X, y)
 
-        y_target = create_y_target(X, y, models, alpha, use_onehot)
+        y_target, y_preds = create_y_target(X, y, models, alpha, use_onehot)
 
         if args.use_onehot:
             target_name = f"{args.model_list_id}-onehot"
@@ -62,6 +64,7 @@ def main() -> None:
             target_name = f"{args.model_list_id}-alpha={args.alpha}"
 
         data[target_name] = y_target
+        data[f"{args.model_list_id}-PREDS"] = y_preds
         np.savez(path, **data)
 
 
