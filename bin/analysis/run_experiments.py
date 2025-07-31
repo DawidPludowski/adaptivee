@@ -41,8 +41,8 @@ def __get_class_name(obj: any) -> str:
 def main() -> None:
 
     args = get_args()
-    Path(args.out_path).mkdir(exist_ok=True, parents=True)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    (Path(args.out_path) / timestamp).mkdir(exist_ok=True, parents=True)
 
     with open(Path(args.out_path) / timestamp / "args.json", "w") as f:
         json.dump(vars(args), f)
