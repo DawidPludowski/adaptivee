@@ -13,32 +13,11 @@
 source .venv/bin/activate
 export PYTHONPATH=`pwd`
 
-# liltab small
 python bin/analysis/run_experiments.py \
-    --data-dir resources/liltab/split/inference \
-    --encoder-path results/07-30-2025-17:13:53/model_checkpoints/model-epoch=9999-val_loss=-0.31.ckpt \
-    --out-path results-analysis/initial \
-    --model-list-id "SIMPLE-1" \
-    --alpha "inf" \
-    --reweighter simple \
-    --n-iter 10
-
-# liltab big
-python bin/analysis/run_experiments.py \
-    --data-dir resources/liltab/split/inference \
-    --encoder-path results/07-30-2025-21:49:05/model_checkpoints/last.ckpt \
-    --out-path results-analysis/initial \
-    --model-list-id "SIMPLE-1" \
-    --alpha "inf" \
-    --reweighter simple \
-    --n-iter 10
-
-# tabzilla big
-python bin/analysis/run_experiments.py \
-    --data-dir resources/tabzilla/datasets_split/inference \
-    # --encoder-path results/07-30-2025-21:49:05/model_checkpoints/last.ckpt \
-    --out-path results-analysis/initial \
-    --model-list-id "SIMPLE-1" \
-    --alpha "inf" \
-    --reweighter simple \
-    --n-iter 10
+    --data-dir $data_dir \
+    --encoder-path $encoder_path \
+    --out-path $out_path \
+    --model-list-id $model_list_id \
+    --alpha $alpha \
+    --reweighter $reweighter \
+    --n-iter $n_iter

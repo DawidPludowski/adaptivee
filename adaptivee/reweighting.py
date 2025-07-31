@@ -73,3 +73,14 @@ class DirectionConstantReweight(MixInReweight):
         weights = initial_weights + np.sign(encoder_weights) * self.step_size
         weights = weights / weights.sum(axis=1).reshape((-1, 1))
         return weights
+
+
+class OneTakesAllReweight(MixInReweight):
+    def __init__(self):
+        super().__init__()
+
+    def _get_final_weights(self, encoder_weights, initial_weights=None):
+        max_el = np.argmax(encoder_weights, axis=1)
+        weights = np.zeros(shape=encoder_weights.shape)
+        weights[np.arange(weights.shape[0]), max_el] = 1
+        return weights

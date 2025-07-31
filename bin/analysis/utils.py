@@ -3,6 +3,7 @@ from adaptivee.reweighting import (
     SimpleReweight,
     DirectionReweight,
     DirectionConstantReweight,
+    OneTakesAllReweight,
 )
 from adaptivee.target_weights import SoftMaxWeighter, OneHotWeighter
 from functools import partial
@@ -15,6 +16,8 @@ def load_encoder(path: str):
 def get_reweighter(name: str):
     if name == "simple":
         return SimpleReweight
+    elif name == "one":
+        return OneTakesAllReweight
 
     class_, param = name.split("-")
     if class_ == "direction":

@@ -189,3 +189,5 @@ AutogluonModels/*
 temp.*
 *tmp*
 *.zip
+
+results-analysis

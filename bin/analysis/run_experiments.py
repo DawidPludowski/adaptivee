@@ -23,6 +23,8 @@ from bin.analysis.utils import (
 )
 from config.models import MODELS_LISTS
 import traceback
+from pathlib import Path
+import json
 
 
 def __get_class_name(obj: any) -> str:
@@ -39,7 +41,11 @@ def __get_class_name(obj: any) -> str:
 def main() -> None:
 
     args = get_args()
+    Path(args.out_path).mkdir(exist_ok=True, parents=True)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    with open(Path(args.out_path) / timestamp / "args.json", "w") as f:
+        json.dump(vars(args), f)
 
     for train_data, test_data, data_name in get_data(args.data_dir):
 
