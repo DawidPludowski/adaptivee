@@ -4,54 +4,9 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 from openml import datasets, study, tasks
-from sklearn.compose import make_column_selector, make_column_transformer
-from sklearn.impute import SimpleImputer
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder
 from bin.data.args import get_download_args as get_args
-
-
-def _get_generic_preprocessing() -> Pipeline:
-    cat_pipeline = Pipeline(
-        [
-            ("imputer", SimpleImputer(strategy="most_frequent")),
-            (
-                "one-hot",
-                OneHotEncoder(
-                    sparse_output=False, handle_unknown="ignore", drop="first"
-                ),
-            ),
-        ]
-    )
-
-    num_pipeline = Pipeline(
-        [
-            ("imputer", SimpleImputer(strategy="mean")),
-            ("scaler", StandardScaler()),
-        ]
-    )
-
-    pipeline = Pipeline(
-        [
-            (
-                "transformers",
-                make_column_transformer(
-                    (
-                        cat_pipeline,
-                        make_column_selector(
-                            dtype_include=("object", "category")
-                        ),
-                    ),
-                    (
-                        num_pipeline,
-                        make_column_selector(dtype_include=np.number),
-                    ),
-                ),
-            )
-        ]
-    )
-
-    return pipeline
+from bin.utils import get_generic_preprocessing
 
 
 def _ensure_last_target(df: pd.DataFrame, target_name: str) -> pd.DataFrame:
@@ -125,7 +80,7 @@ def download_tasks(
 
         X, y = data.iloc[:, :-1], data.iloc[:, -1]
 
-        pipeline = _get_generic_preprocessing()
+        pipeline = get_generic_preprocessing()
         X = pipeline.fit_transform(X)
         y = LabelEncoder().fit_transform(y)
 

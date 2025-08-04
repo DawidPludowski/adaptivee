@@ -184,3 +184,11 @@ results/*
 # Autogluon models
 
 AutogluonModels/*
+
+## temp files
+temp.*
+*tmp*
+*.zip
+
+results-analysis
+media/

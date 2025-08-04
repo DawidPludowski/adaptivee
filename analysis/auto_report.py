@@ -1,5 +1,5 @@
 import warnings
-from datetime import datetime
+from time import time
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -15,8 +15,13 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
-from adaptivee.target_weights import StaticFixedWeights, StaticGridWeighter
-from analysis.ensembler import AdaptiveEnsembler
+from adaptivee.target_weights import (
+    StaticFixedWeights,
+    StaticGridWeighter,
+    StaticEqualWeighter,
+    StaticLogisticWeighter,
+)
+from adaptivee.ensembler import AdaptiveEnsembler
 
 
 class AutoReport:
@@ -35,11 +40,14 @@ class AutoReport:
         result_dir: str | Path = "report",
         report_name: str = None,
         data_name: str = None,
+        n_iter: int = 100,
     ) -> None:
         self.X_train = X_train
         self.y_train = y_train
         self.X_test = X_test
         self.y_test = y_test
+
+        self.n_iter = n_iter
 
         if Models is not None:
             self.models = [Model() for Model in Models]
@@ -49,11 +57,7 @@ class AutoReport:
         self.target_weighter = TargetWeighter()
         self.encoder = Encoder()
         self.reweighter = Reweighter()
-        self.static_weighter = (
-            StaticFixedWeights(None)
-            if self.models is None
-            else StaticGridWeighter()
-        )
+        self.static_weighter = StaticLogisticWeighter()
 
         self.ensemble = AdaptiveEnsembler(
             self.models,
@@ -72,7 +76,7 @@ class AutoReport:
     def make_report(self) -> None:
         self.root_dir.mkdir(exist_ok=True, parents=True)
 
-        self.vizualize_data()
+        # self.vizualize_data()
         self.make_experiment()
         self.put_meta_data()
 
@@ -105,7 +109,11 @@ class AutoReport:
             self.X_test,
             self.y_test,
         )
-        self.ensemble.create_adaptive_ensembler(X_train, y_train)
+        start = time()
+        self.ensemble.create_adaptive_ensembler(
+            X_train, y_train, n_iter=self.n_iter
+        )
+        self.time_elapsed = time() - start
 
         self.__report_metrics(X_train, y_train, X_test, y_test)
         self.__report_weights(X_train, y_train, X_test, y_test)
@@ -117,6 +125,7 @@ class AutoReport:
             "encoder": type(self.encoder).__name__,
             "reweighter": type(self.reweighter).__name__,
             "meta_data": self.meta_data,
+            "time_elapsed": self.time_elapsed,
         }
 
         with open(self.root_dir / "meta_data.yaml", "w") as f:
@@ -141,6 +150,12 @@ class AutoReport:
 
         y_train_pred = self.ensemble.predict(X_train)
         y_test_pred = self.ensemble.predict(X_test)
+
+        np.savez(
+            self.root_dir / "output.npz",
+            y_train=y_train_pred,
+            y_test=y_test_pred,
+        )
 
         y_train_pred_bin = (y_train_pred > 0.5).astype(int)
         y_test_pred_bin = (y_test_pred > 0.5).astype(int)
@@ -251,31 +266,31 @@ class AutoReport:
 
         # viz
 
-        train_differences = np.linalg.norm(
-            train_weights - target_train_weights, axis=1
-        )
-        test_differences = np.linalg.norm(
-            test_weights - target_test_weights, axis=1
-        )
+        # train_differences = np.linalg.norm(
+        #     train_weights - target_train_weights, axis=1
+        # )
+        # test_differences = np.linalg.norm(
+        #     test_weights - target_test_weights, axis=1
+        # )
 
-        temp_train_df = pd.DataFrame()
-        temp_train_df["diff"] = train_differences
-        temp_train_df["type"] = "train"
+        # temp_train_df = pd.DataFrame()
+        # temp_train_df["diff"] = train_differences
+        # temp_train_df["type"] = "train"
 
-        temp_test_df = pd.DataFrame()
-        temp_test_df["diff"] = test_differences
-        temp_test_df["type"] = "test"
+        # temp_test_df = pd.DataFrame()
+        # temp_test_df["diff"] = test_differences
+        # temp_test_df["type"] = "test"
 
-        g = sns.boxplot(
-            data=pd.concat([temp_train_df, temp_test_df]),
-            x="type",
-            y="diff",
-        )
-        g.set(title="Difference in norm of predicted and target weights")
-        plt.ylim((0, 1))
+        # g = sns.boxplot(
+        #     data=pd.concat([temp_train_df, temp_test_df]),
+        #     x="type",
+        #     y="diff",
+        # )
+        # g.set(title="Difference in norm of predicted and target weights")
+        # plt.ylim((0, 1))
 
-        plt.savefig(f"{self.root_dir}/weights_diff.png")
-        plt.clf()
+        # plt.savefig(f"{self.root_dir}/weights_diff.png")
+        # plt.clf()
 
 
 class AutoSummaryReport:
