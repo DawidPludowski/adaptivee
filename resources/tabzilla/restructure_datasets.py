@@ -37,7 +37,19 @@ def main() -> None:
             y = np.load(f, allow_pickle=True)
             y = y.astype(float)
 
-        np.savez(output_data_path / f"{datapath.stem}.npz", X=X, y=y)
+        if np.unique(y).shape[0] != 2:
+            logger.warning("cont var")
+            continue
+
+        if (output_data_path / f"{datapath.stem}.npz").exists():
+            data = np.load(output_data_path / f"{datapath.stem}.npz")
+            data = dict(data)
+            data["X"] = X
+            data["y"] = y
+        else:
+            data = {"X": X, "y": y}
+        logger.info(f"save to: {output_data_path}")
+        np.savez(output_data_path / f"{datapath.stem}.npz", **data)
 
 
 if __name__ == "__main__":

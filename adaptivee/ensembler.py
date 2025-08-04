@@ -8,7 +8,7 @@ from autogluon.core.models.ensemble.weighted_ensemble_model import (
 )
 from autogluon.tabular import TabularPredictor
 
-from adaptivee.encoders import MixInEncoder
+from adaptivee.encoders import MixInEncoder, MixInDeepEncoder
 from adaptivee.reweighting import MixInReweight, SimpleReweight
 from adaptivee.target_weights import (
     MixInStaticTargetWeighter,
@@ -111,7 +111,10 @@ class AdaptiveEnsembler:
         self.static_weights = static_weights
 
         if not isinstance(self.target_weighter, MixInStaticTargetWeighter):
-            self.encoder.train(X, weights, n_iter)
+            if isinstance(self.target_weighter, MixInDeepEncoder):
+                self.encoder.train(X, weights, n_iter)
+            else:
+                self.encoder.train(X, weights)
 
         if self.use_easy_weighting:
             self._create_knn(X, knn_k)

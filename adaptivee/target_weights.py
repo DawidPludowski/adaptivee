@@ -193,7 +193,6 @@ class StaticGridWeighter(MixInStaticTargetWeighter):
         return combinations_
 
 
-@deprecated
 class StaticLogisticWeighter(MixInStaticTargetWeighter):
 
     def __init__(self) -> None:

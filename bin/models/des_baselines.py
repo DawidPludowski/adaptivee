@@ -2,6 +2,7 @@ import numpy as np
 from pathlib import Path
 from bin.models.args import get_des_baselines_args as get_args
 from bin.utils import get_trained_models, get_metrics
+from bin.models.utils import Oracle
 from config.models import BASELINES_LIST
 import json
 from sklearn.ensemble import StackingClassifier
@@ -44,8 +45,13 @@ def main() -> None:
         baseline.fit(X_train, y_train)
         end = time.time()
 
-        y_train_p = baseline.predict(X_train)
-        y_test_p = baseline.predict(X_test)
+        if not isinstance(baseline, Oracle):
+            y_train_p = baseline.predict(X_train)
+            y_test_p = baseline.predict(X_test)
+        else:
+            y_train_p = baseline.predict(X_train, y_train)
+            y_test_p = baseline.predict(X_test, y_test)
+
         metrics[baseline_name] = get_metrics(
             y_train, y_train_p, y_test, y_test_p
         )

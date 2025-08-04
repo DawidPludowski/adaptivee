@@ -13,24 +13,25 @@
 source .venv/bin/activate
 export PYTHONPATH=`pwd`
 
-# python bin/models/pretrain_encoder.py \
-#     --train-path resources/liltab/split/encoder/train \
-#     --val-path resources/liltab/split/encoder/test \
-#     --model-list-id "SIMPLE-1" \
-#     --alpha-name "alpha=1.0" \
-#     --n-hidden-layers 8 \
-#     --hidden-size 32 \
-#     --n-epochs 10000
-
 python bin/models/pretrain_encoder.py \
-    --train-path resources/tabzilla/datasets_split/encoder/train \
-    --val-path resources/tabzilla/datasets_split/encoder/test \
+    --train-path resources/liltab/split/encoder/train \
+    --val-path resources/liltab/split/encoder/test \
     --model-list-id "SIMPLE-1" \
     --alpha-name "alpha=1.0" \
-    --n-hidden-layers 16 \
-    --hidden-size 64 \
-    --n-epochs 10000 \
-    --out-path "results/tabzilla-alpha=1.0"
+    --n-hidden-layers 8 \
+    --hidden-size 32 \
+    --n-epochs 1 \
+    --out-path results/no-pretrain
+
+# python bin/models/pretrain_encoder.py \
+#     --train-path resources/tabzilla/datasets_split/encoder/train \
+#     --val-path resources/tabzilla/datasets_split/encoder/test \
+#     --model-list-id "SIMPLE-1" \
+#     --alpha-name "alpha=1.0" \
+#     --n-hidden-layers 16 \
+#     --hidden-size 64 \
+#     --n-epochs 10000 \
+#     --out-path "results/tabzilla-alpha=1.0"
 
 # python bin/models/pretrain_encoder.py \
 #     --train-path resources/liltab/split/encoder/train \

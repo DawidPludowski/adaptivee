@@ -151,6 +151,12 @@ class AutoReport:
         y_train_pred = self.ensemble.predict(X_train)
         y_test_pred = self.ensemble.predict(X_test)
 
+        np.savez(
+            self.root_dir / "output.npz",
+            y_train=y_train_pred,
+            y_test=y_test_pred,
+        )
+
         y_train_pred_bin = (y_train_pred > 0.5).astype(int)
         y_test_pred_bin = (y_test_pred > 0.5).astype(int)
 

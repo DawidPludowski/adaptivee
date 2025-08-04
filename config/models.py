@@ -17,6 +17,7 @@ from functools import partial
 from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
 from lightgbm import LGBMClassifier
+from bin.models.utils import Oracle
 
 MODELS_LISTS = {
     "SIMPLE-1": [
@@ -42,4 +43,6 @@ BASELINES_LIST = {
     "stacking": partial(
         StackingClassifier, final_estimator=LogisticRegression()
     ),
+    "Oracle-good": partial(Oracle, invert_oracle=True),
+    "Oracle-bad": partial(Oracle, invert_oracle=False),
 }

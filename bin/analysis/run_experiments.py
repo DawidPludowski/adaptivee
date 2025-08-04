@@ -42,9 +42,13 @@ def main() -> None:
 
     args = get_args()
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    (Path(args.out_path) / timestamp).mkdir(exist_ok=True, parents=True)
+    (Path("report") / args.out_path / timestamp).mkdir(
+        exist_ok=True, parents=True
+    )
 
-    with open(Path(args.out_path) / timestamp / "args.json", "w") as f:
+    with open(
+        Path("report") / args.out_path / timestamp / "args.json", "w"
+    ) as f:
         json.dump(vars(args), f)
 
     for train_data, test_data, data_name in get_data(args.data_dir):

@@ -49,7 +49,7 @@ def main() -> None:
         logger.info(f"Start {path.stem}")
         models = [Model() for Model in Models]
 
-        data = np.load(path)
+        data = np.load(path, allow_pickle=True)
         data = dict(data)
         X, y = data["X"], data["y"]
 
