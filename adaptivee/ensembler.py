@@ -8,15 +8,16 @@ from autogluon.core.models.ensemble.weighted_ensemble_model import (
 )
 from autogluon.tabular import TabularPredictor
 
-from adaptivee.encoders import MixInEncoder
+from adaptivee.encoders import MixInEncoder, MixInDeepEncoder
 from adaptivee.reweighting import MixInReweight, SimpleReweight
 from adaptivee.target_weights import (
     MixInStaticTargetWeighter,
     MixInTargetWeighter,
     SoftMaxWeighter,
     StaticFixedWeights,
-    StaticGridWeighter,
+    StaticEqualWeighter,
 )
+from sklearn.neighbors import KNeighborsClassifier
 
 
 class AdaptiveEnsembler:
@@ -27,7 +28,7 @@ class AdaptiveEnsembler:
         encoder: MixInEncoder,
         target_weighter: MixInTargetWeighter = SoftMaxWeighter(),
         reweighter: MixInReweight = SimpleReweight(),
-        static_weighter: MixInStaticTargetWeighter = StaticGridWeighter(),
+        static_weighter: MixInStaticTargetWeighter = StaticEqualWeighter(),
         is_models_trained: bool = True,
         predict_fn: str = "predict_proba",
         train_fn: str = "fit",
@@ -40,11 +41,13 @@ class AdaptiveEnsembler:
             # "presets": "best_quality",
             "time_limit": 5 * 60,
         },
+        use_easy_weighting: bool = True,
     ) -> None:
         self.models = models
         self.encoder = encoder
         self.target_weighter = target_weighter
         self.reweighter = reweighter
+        self.use_easy_weighting = use_easy_weighting
 
         if use_autogluon and not isinstance(
             target_weighter, StaticFixedWeights
@@ -87,7 +90,12 @@ class AdaptiveEnsembler:
         self.use_autogluon = use_autogluon
 
     def create_adaptive_ensembler(
-        self, X: np.ndarray, y: np.ndarray, return_score: bool = False
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        return_score: bool = False,
+        knn_k: int = 3,
+        n_iter: int = 100,
     ) -> None:
 
         if self.use_autogluon:
@@ -103,10 +111,28 @@ class AdaptiveEnsembler:
         self.static_weights = static_weights
 
         if not isinstance(self.target_weighter, MixInStaticTargetWeighter):
-            self.encoder.train(X, weights)
+            if isinstance(self.target_weighter, MixInDeepEncoder):
+                self.encoder.train(X, weights, n_iter)
+            else:
+                self.encoder.train(X, weights)
+
+        if self.use_easy_weighting:
+            self._create_knn(X, knn_k)
 
         if return_score:
             raise NotImplementedError()
+
+    def _create_knn(self, X: np.ndarray, k: int) -> None:
+        y_preds = self._get_models_preds(X)
+        easy = self._get_easy_obs(y_preds)
+        self.knn = KNeighborsClassifier(k)
+        self.knn.fit(X, easy)
+
+    def _get_easy_obs(self, y: np.ndarray) -> None:
+        y = (y > 0.5).astype(int)
+        preds_mean = y.mean(axis=1)
+        easy = (preds_mean == 0) + (preds_mean == 1)
+        return easy
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         y_preds = self._get_models_preds(X)
@@ -114,6 +140,12 @@ class AdaptiveEnsembler:
         final_weights = self.get_weights(X)
 
         y_pred_final = np.sum(y_preds * final_weights, axis=1)
+
+        if self.use_easy_weighting:
+            easy = self.knn.predict(X)
+            y_pred_static = self.predict_static(X)
+            return y_pred_static * easy + y_pred_final * (1 - easy)
+
         return y_pred_final
 
     def predict_static(self, X: np.ndarray) -> np.ndarray:

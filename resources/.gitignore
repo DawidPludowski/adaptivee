@@ -1,0 +1,4 @@
+*.npz
+*.csv
+*.npy.gz
+*.json
